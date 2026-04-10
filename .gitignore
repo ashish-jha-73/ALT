@@ -1,0 +1,66 @@
+# Node modules
+
+node_modules/
+**/node_modules/
+
+# Build outputs
+
+dist/
+build/
+client/dist/
+client/build/
+
+# Logs
+
+logs/
+*.log
+npm-debug.log*
+yarn-debug.log*
+pnpm-debug.log*
+
+# Environment variables
+
+.env
+.env.*
+!.env.example
+
+# OS files
+
+.DS_Store
+Thumbs.db
+
+# IDE files
+
+.vscode/
+.idea/
+
+# Temporary files
+
+*.tmp
+*.temp
+.cache/
+
+# PM2
+
+.pm2/
+dump.pm2
+
+# MongoDB local files (if running locally)
+
+data/
+*.wt
+*.ns
+*.lock
+
+# Coverage / testing
+
+coverage/
+
+# GitHub / misc
+
+*.pem
+*.key
+
+# Optional: ignore your specific project root if needed
+
+grade8-linear-equations-one-variable/

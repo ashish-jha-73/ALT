@@ -1,0 +1,1135 @@
+======================================================================
+TOPIC 1: What are Algebraic Expressions?
+======================================================================
+
+── LESSON CONCEPT QUESTIONS ──
+
+  Lesson 1: Variables & Constants
+  [Multiple Choice]
+  Q: In the expression 5y + 3, what is the variable?
+     Options: 5 | y | 3 | 5y
+  A: y
+
+  Lesson 2: Terms, Factors & Coefficients
+  [Fill in the Blank]
+  Q: In 8x − 3, the coefficient of x is ___ and the constant is ___.
+  A: 8 | -3
+
+  Lesson 3: Monomials, Binomials & Polynomials
+  [Match the Following]
+  Q: Match each expression to its type.
+  A: 5x² → Monomial | 3y − 7 → Binomial | a + b + c → Trinomial | −9 → Constant monomial
+
+  Lesson 4: Like & Unlike Terms
+  [Drag & Sort]
+  Q: Sort these terms: 4x, 2y, −3x, 7y, 5x²
+     Items: 4x | 2y | −3x | 7y | 5x²
+  A: 4x → Like x | 2y → Like y | −3x → Like x | 7y → Like y | 5x² → Neither
+
+── PRACTICE QUESTIONS (Concept-based) ──
+
+  [Variables]
+  Q: If x=7, what is x+2?
+  A: 9
+
+  [Coefficients]
+  Q: What is the coefficient in 8x?
+  A: 8
+
+  [Like Terms]
+  Q: Simplify 4x+3x.
+  A: 7x
+
+======================================================================
+TOPIC 2: Adding & Subtracting Expressions
+======================================================================
+
+── LESSON CONCEPT QUESTIONS ──
+
+  Lesson 1: Collecting Like Terms
+  [Multiple Choice]
+  Q: What is (3x + 5) + (2x − 2)?
+     Options: 5x+3 | 5x+7 | x+3 | 6x+3
+  A: 5x+3
+
+  Lesson 2: Subtracting Expressions
+  [Fill in the Blank]
+  Q: (7x + 4) − (3x + 1) = ___x + ___
+  A: 4 | 3
+
+  Lesson 3: Adding Multi-variable Expressions
+  [Drag & Sort]
+  Q: Build the simplified form of (4a + 2b) + (3a − b)
+     Items: 7a | 7b | 7a+b | 7a−b | a+b
+  A: 7a+b → Answer
+
+── PRACTICE QUESTIONS (Concept-based) ──
+
+  [Add Like Terms]
+  Q: (5x+2)+(3x+4)=?
+  A: 8x+6
+
+  [Subtract Expressions]
+  Q: (9x+6)−(4x+2)=?
+  A: 5x+4
+
+======================================================================
+TOPIC 3: Multiplying Algebraic Expressions
+======================================================================
+
+── LESSON CONCEPT QUESTIONS ──
+
+  Lesson 1: Multiplying Monomials
+  [Multiple Choice]
+  Q: What is 3x × 4x²?
+     Options: 7x³ | 12x² | 12x³ | 7x²
+  A: 12x³
+
+  Lesson 2: Monomial × Polynomial (Distributive Law)
+  [Fill in the Blank]
+  Q: 2a × (3b + 4) = ___ab + ___a
+  A: 6 | 8
+
+  Lesson 3: Binomial × Binomial (FOIL)
+  [Match the Following]
+  Q: Match each product step for (x+2)(x+3):
+  A: x × x → x² | x × 3 → 3x | 2 × x → 2x | 2 × 3 → 6
+
+── PRACTICE QUESTIONS (Concept-based) ──
+
+  [Monomial × Monomial]
+  Q: 5x × 2x² = ?
+  A: 10x³
+
+  [Monomial × Binomial]
+  Q: 4(2x+3) = ?
+  A: 8x+12
+
+======================================================================
+TOPIC 4: Algebraic Identities
+======================================================================
+
+── LESSON CONCEPT QUESTIONS ──
+
+  Lesson 1: What is an Identity?
+  [Multiple Choice]
+  Q: Which is an identity (true for ALL values)?
+     Options: x + 5 = 9 | (a+b)² = a²+2ab+b² | 2x = 10 | x² = 4
+  A: (a+b)² = a²+2ab+b²
+
+  Lesson 2: The Four Standard Identities
+  [Fill in the Blank]
+  Q: (a+b)² = a² + ___ab + b²
+  A: 2
+
+  Lesson 3: Applying Identity I: (a+b)²
+  [Drag & Sort]
+  Q: Arrange the steps to expand (x+5)²:
+     Items: x² | + 10x | + 25 | = (x+5)²
+  A: x² → Step 1 | + 10x → Step 2 | + 25 → Step 3 | = (x+5)² → Result
+
+  Lesson 4: Identity III: Difference of Squares
+  [Multiple Choice]
+  Q: (2x+3)(2x−3) = ?
+     Options: 4x²−9 | 4x²+9 | 4x²−6x+9 | 2x²−9
+  A: 4x²−9
+
+── PRACTICE QUESTIONS (Concept-based) ──
+
+  [Identity (a+b)²]
+  Q: Expand (y+4)².
+  A: y²+8y+16
+
+  [Identity (a+b)(a−b)]
+  Q: (x+5)(x−5)=?
+  A: x²−25
+
+======================================================================
+TOPIC 5: Introduction to Linear Equations
+======================================================================
+
+── LESSON CONCEPT QUESTIONS ──
+
+  Lesson 1: Equations vs. Expressions
+  [Multiple Choice]
+  Q: Which of these is an equation?
+     Options: 3x + 5 | 2y − 1 = 7 | 4ab | x² + y
+  A: 2y − 1 = 7
+
+  Lesson 2: LHS, RHS & Solutions
+  [Fill in the Blank]
+  Q: In 5x = 20, the LHS is ___ and the solution is x = ___.
+  A: 5x | 4
+
+  Lesson 3: Linear vs. Non-Linear
+  [Match the Following]
+  Q: Sort these as Linear or Non-linear:
+  A: 3x+1=10 → Linear | x²=9 → Non-linear | y/2=3 → Linear | z³=8 → Non-linear
+
+  Lesson 4: Checking a Solution
+  [Multiple Choice]
+  Q: Is x = 4 a solution of 3x − 2 = 10?
+     Options: Yes, LHS = 10 | No, LHS = 14 | Yes, LHS = 14 | No, LHS = 10
+  A: Yes, LHS = 10
+
+── PRACTICE QUESTIONS (Concept-based) ──
+
+  [What is an Equation?]
+  Q: Is 3x+5=11 an equation? (yes/no)
+  A: yes
+
+  [LHS and RHS]
+  Q: What is the RHS of 4x+1=13?
+  A: 13
+
+======================================================================
+TOPIC 6: The Balance Method
+======================================================================
+
+── LESSON CONCEPT QUESTIONS ──
+
+  Lesson 1: The Balance Scale Idea
+  [Multiple Choice]
+  Q: To solve x + 5 = 12, what do we do to both sides?
+     Options: Add 5 | Subtract 5 | Multiply by 5 | Divide by 5
+  A: Subtract 5
+
+  Lesson 2: Solving ax = c (Multiplication/Division)
+  [Fill in the Blank]
+  Q: If 3x = 15, then x = ___.
+  A: 5
+
+  Lesson 3: Solving ax + b = c (Two Steps)
+  [Drag & Sort]
+  Q: Put these steps in order to solve 3x + 6 = 18:
+     Items: 3x + 6 = 18 | 3x = 12 | Subtract 6 from both sides | x = 4 | Divide both sides by 3
+  A: 3x + 6 = 18 → 1st | Subtract 6 from both sides → 2nd | 3x = 12 → 3rd | Divide both sides by 3 → 4th | x = 4 → 5th
+
+── PRACTICE QUESTIONS (Concept-based) ──
+
+  [Solve x+b=c]
+  Q: Solve x+6=10.
+  A: 4
+
+  [Solve ax=c]
+  Q: Solve 4x=20.
+  A: 5
+
+  [Solve ax+b=c]
+  Q: Solve 3x+2=11.
+  A: 3
+
+======================================================================
+TOPIC 7: Transposition Method
+======================================================================
+
+── LESSON CONCEPT QUESTIONS ──
+
+  Lesson 1: What is Transposition?
+  [Multiple Choice]
+  Q: Transpose −4 in x − 4 = 9. What do you get?
+     Options: x = 9+4 | x = 9−4 | x = 9×4 | x = 9÷4
+  A: x = 9+4
+
+  Lesson 2: Solving with Transposition
+  [Fill in the Blank]
+  Q: Solve 4x − 2 = 14. x = ___.
+  A: 4
+
+  Lesson 3: Equations with Brackets
+  [Match the Following]
+  Q: Match each equation to its solution:
+  A: 2(x+1)=8 → x=3 | 3(x−2)=9 → x=5 | 4(2x−1)=12 → x=2
+
+── PRACTICE QUESTIONS (Concept-based) ──
+
+  [Transposition Rule]
+  Q: Solve x−5=8.
+  A: 13
+
+  [Expand then Transpose]
+  Q: Solve 2(x+3)=10.
+  A: 2
+
+======================================================================
+TOPIC 8: Equations with Fractions
+======================================================================
+
+── LESSON CONCEPT QUESTIONS ──
+
+  Lesson 1: Clearing Fractions (LCM Method)
+  [Multiple Choice]
+  Q: To clear fractions in x/3 + x/4 = 7, multiply by:
+     Options: 3 | 4 | 7 | 12
+  A: 12
+
+  Lesson 2: Cross-Multiplication
+  [Fill in the Blank]
+  Q: If x/4 = 3/6, then 6x = ___ so x = ___.
+  A: 12 | 2
+
+  Lesson 3: Reducing to Linear Form
+  [Drag & Sort]
+  Q: Order the steps for (x+2)/(x−1) = 2:
+     Items: x+2 = 2(x−1) | x+2=2x−2 | 4=x | Cross-multiply
+  A: Cross-multiply → Step 1 | x+2 = 2(x−1) → Step 2 | x+2=2x−2 → Step 3 | 4=x → Answer
+
+── PRACTICE QUESTIONS (Concept-based) ──
+
+  [Clear Fractions]
+  Q: Solve x/3=4.
+  A: 12
+
+  [Cross-Multiply]
+  Q: Solve x/2=6/4.
+  A: 3
+
+======================================================================
+TOPIC 9: Variables on Both Sides
+======================================================================
+
+── LESSON CONCEPT QUESTIONS ──
+
+  Lesson 1: Collecting Variable Terms
+  [Multiple Choice]
+  Q: Solve 3x = x + 6.
+     Options: x=2 | x=3 | x=6 | x=4
+  A: x=3
+
+  Lesson 2: Strategy: Larger Coefficient to Left
+  [Fill in the Blank]
+  Q: Solve 6x − 3 = 4x + 7. x = ___.
+  A: 5
+
+  Lesson 3: Special Cases: Infinite & No Solutions
+  [Multiple Choice]
+  Q: Solve x + 4 = x + 4. How many solutions?
+     Options: x=0 | No solution | Infinite solutions | x=4
+  A: Infinite solutions
+
+── PRACTICE QUESTIONS (Concept-based) ──
+
+  [Collect Variables]
+  Q: Solve 5x=3x+8.
+  A: 4
+
+  [Variables Both Sides+Brackets]
+  Q: Solve 2(x+1)=x+5.
+  A: 3
+
+======================================================================
+TOPIC 10: Number & Age Word Problems
+======================================================================
+
+── LESSON CONCEPT QUESTIONS ──
+
+  Lesson 1: Setting Up Equations from Word Problems
+  [Multiple Choice]
+  Q: 'Twice a number minus 3 is 11.' Which equation?
+     Options: 2x+3=11 | 2x−3=11 | x/2−3=11 | 3x−2=11
+  A: 2x−3=11
+
+  Lesson 2: Age Problems
+  [Fill in the Blank]
+  Q: Father is 3× son. Sum of ages = 32. Son's age = ___, Father's = ___.
+  A: 8 | 24
+
+  Lesson 3: Consecutive Number Problems
+  [Match the Following]
+  Q: Match the problem to its equation:
+  A: Sum of 2 consec. = 15 → 3x=21 | 3 times a no. = 21 → x+9=20 | No. + 9 = 20 → 2x−4=8 | Twice no. − 4 = 8 → x+(x+1)=15
+
+── PRACTICE QUESTIONS (Concept-based) ──
+
+  [Number Problems]
+  Q: A number minus 4 equals 9. Find it.
+  A: 13
+
+  [Age Problems]
+  Q: Father is 3× son. Together 32. Son's age?
+  A: 8
+
+======================================================================
+TOPIC 11: Applied Problems: Perimeter, Money & Speed
+======================================================================
+
+── LESSON CONCEPT QUESTIONS ──
+
+  Lesson 1: Perimeter & Geometry Problems
+  [Multiple Choice]
+  Q: A rectangle has perimeter 36. Length = 2× width. Find width.
+     Options: w=4 | w=6 | w=9 | w=12
+  A: w=6
+
+  Lesson 2: Money & Cost Problems
+  [Fill in the Blank]
+  Q: 5 pens cost Rs.75. Cost of 1 pen = Rs.___.
+  A: 15
+
+  Lesson 3: Distance-Speed-Time Problems
+  [Drag & Sort]
+  Q: Match step to action for: Car at x km/h, 3 hours, 120 km.
+     Items: 3x = 120 | D = S × T | x = 40 km/h | Write the formula
+  A: Write the formula → Formula | D = S × T → Formula | 3x = 120 → Equation | x = 40 km/h → Answer
+
+── PRACTICE QUESTIONS (Concept-based) ──
+
+  [Perimeter Equations]
+  Q: Square perimeter=28. Side=?
+  A: 7
+
+  [Speed Problems]
+  Q: 4 hours, 100 km. Speed=?
+  A: 25
+
+======================================================================
+TOPIC 12: Digit & Ratio Word Problems
+======================================================================
+
+── LESSON CONCEPT QUESTIONS ──
+
+  Lesson 1: Two-Digit Number Problems
+  [Multiple Choice]
+  Q: A two-digit number: tens = units + 2. If reversed it's 36. Original?
+     Options: 58 | 85 | 47 | 74
+  A: 58
+
+  Lesson 2: Ratio & Proportion Problems
+  [Fill in the Blank]
+  Q: Ratio 2:3, sum = 25. Smaller = ___, Larger = ___.
+  A: 10 | 15
+
+  Lesson 3: Mixture Problems
+  [Match the Following]
+  Q: Match each word clue to its algebraic form:
+  A: Ratio 3:5 → let x, x+2 | Tens digit = units + 2 → let 3x and 5x | Two numbers sum = 40 → let x and 40−x | Digits differ by 3 → let b, b+3
+
+── PRACTICE QUESTIONS (Concept-based) ──
+
+  [Ratio Problems]
+  Q: Ratio 1:3, sum=20. Smaller?
+  A: 5
+
+  [Digit Problems]
+  Q: Units digit is 5, tens is units+2. What is the number?
+  A: 75
+
+
+======================================================================
+ADAPTIVE QUESTION BANK (30 per subtopic: 10 Easy / 10 Medium / 10 Hard)
+======================================================================
+
+--------------------------------------------------
+Bank: Variables & Expressions  [s1_variables]
+--------------------------------------------------
+
+  [EASY — 10 questions]
+
+  Q: If x = 3, what is x + 4?
+  A: 7
+     (Concept: variable | Hint: Replace x with 3, then add 4.)
+
+  Q: If y = 6, what is y + 2?
+  A: 8
+     (Concept: substitution | Hint: Replace y with 6.)
+
+  Q: What is the coefficient in 4x?
+  A: 4
+     (Concept: coefficient | Hint: Coefficient = the number before x.)
+
+  Q: If x = 10, what is x − 3?
+  A: 7
+     (Concept: variable | Hint: Subtract 3 from 10.)
+
+  Q: In 2x + 5, what is the constant?
+  A: 5
+     (Concept: constant | Hint: The constant has no variable next to it.)
+
+  Q: If x = 2, what is 5x?
+  A: 10
+     (Concept: substitution | Hint: 5 × 2 = ?)
+
+  Q: Is 3x + 1 a linear expression? (yes/no)
+  A: yes
+     (Concept: linear | Hint: Check the power of x — linear means power = 1.)
+
+  Q: What is the coefficient of x in x + 7?
+  A: 1
+     (Concept: coefficient | Hint: When no number is written, the coefficient is 1.)
+
+  Q: Simplify 2x + 3x.
+  A: 5x
+     (Concept: like_terms | Hint: Add the coefficients: 2 + 3, keep x.)
+
+  Q: If x = 1 and y = 2, what is x + y?
+  A: 3
+     (Concept: two_variable | Hint: 1 + 2 = ?)
+
+  [MEDIUM — 10 questions]
+
+  Q: If x = 4, what is 3x + 2?
+  A: 14
+     (Concept: substitution | Hint: 3 × 4 = 12, then add 2.)
+
+  Q: Simplify 5x + 2x − x.
+  A: 6x
+     (Concept: like_terms | Hint: 5 + 2 − 1 = 6, keep x.)
+
+  Q: If t = 7, what is 2t − 5?
+  A: 9
+     (Concept: variable | Hint: 2 × 7 = 14, subtract 5.)
+
+  Q: In 7x − 3, identify the constant.
+  A: -3
+     (Concept: constant | Hint: The term without x is the constant.)
+
+  Q: In 9y + 4, what is the coefficient of y?
+  A: 9
+     (Concept: coefficient | Hint: The number directly before y.)
+
+  Q: Is x² + 2 linear? (yes/no)
+  A: no
+     (Concept: linear | Hint: x² means power = 2, not 1.)
+
+  Q: If a = 3, b = 4, what is 2a + b?
+  A: 10
+     (Concept: two_variable | Hint: 2 × 3 = 6, then + 4.)
+
+  Q: If x = 5, evaluate 4x − 3.
+  A: 17
+     (Concept: substitution | Hint: 4 × 5 = 20, − 3 = ?)
+
+  Q: Simplify 8x − 3x + x.
+  A: 6x
+     (Concept: like_terms | Hint: 8 − 3 + 1 = 6.)
+
+  Q: In −4x + 6, what is the coefficient of x?
+  A: -4
+     (Concept: coefficient | Hint: Include the sign: −4.)
+
+  [HARD — 10 questions]
+
+  Q: If x = −2, what is 3x + 7?
+  A: 1
+     (Concept: substitution | Hint: 3 × (−2) = −6; −6 + 7 = ?)
+
+  Q: If p = 3, q = −2, find 2p − 3q.
+  A: 12
+     (Concept: two_variable | Hint: 2×3=6; 3×(−2)=−6; 6−(−6)=?)
+
+  Q: Simplify 6x − 2y + 4x + 5y.
+  A: 10x+3y
+     (Concept: like_terms | Hint: Collect x-terms and y-terms separately.)
+
+  Q: If x = 1/2, what is 4x + 3?
+  A: 5
+     (Concept: substitution | Hint: 4 × 0.5 = 2; 2 + 3 = ?)
+
+  Q: Which is linear: x³ + 1, 2x + 5, or x²?
+  A: 2x+5
+     (Concept: linear | Hint: Only power-1 expressions are linear.)
+
+  Q: In −x + 4, what is the coefficient of x?
+  A: -1
+     (Concept: coefficient | Hint: −x = −1×x.)
+
+  Q: In 5 − 3x, what is the constant?
+  A: 5
+     (Concept: constant | Hint: The term without x.)
+
+  Q: If x = −1, y = 3, find 2x + 4y − 1.
+  A: 9
+     (Concept: two_variable | Hint: 2(−1)+4(3)−1 = −2+12−1.)
+
+  Q: Simplify 3x + 2 − x − 5.
+  A: 2x-3
+     (Concept: like_terms | Hint: Collect x: 3x−x=2x; constants: 2−5=−3.)
+
+  Q: If a = 2, evaluate a³ − 2a + 1.
+  A: 5
+     (Concept: substitution | Hint: 8 − 4 + 1 = 5. (Evaluate carefully.))
+
+
+--------------------------------------------------
+Bank: Algebraic Equations  [s2_equations]
+--------------------------------------------------
+
+  [EASY — 10 questions]
+
+  Q: Is 2x = 8 an equation? (yes/no)
+  A: yes
+     (Concept: equation | Hint: An equation always has an = sign.)
+
+  Q: In 3x = 9, what is the RHS?
+  A: 9
+     (Concept: lhs_rhs | Hint: RHS is to the right of =.)
+
+  Q: If x + 3 = 7, what is x?
+  A: 4
+     (Concept: balance | Hint: Subtract 3 from both sides.)
+
+  Q: In 5 = x + 2, what is the LHS?
+  A: 5
+     (Concept: lhs_rhs | Hint: LHS is everything left of =.)
+
+  Q: Which has an = sign: 3x + 1 or 3x + 1 = 7?
+  A: 3x+1=7
+     (Concept: equation | Hint: Only the one with = is an equation.)
+
+  Q: Solve x − 2 = 5. What is x?
+  A: 7
+     (Concept: balance | Hint: Add 2 to both sides.)
+
+  Q: Solve x + 6 = 10. What is x?
+  A: 4
+     (Concept: transposition | Hint: Subtract 6 from both sides.)
+
+  Q: In 2x = 10, x = ?
+  A: 5
+     (Concept: balance | Hint: Divide both sides by 2.)
+
+  Q: Solve x − 4 = 9. What is x?
+  A: 13
+     (Concept: transposition | Hint: Add 4 to both sides.)
+
+  Q: In 4x + 1 = 13, what is the LHS?
+  A: 4x+1
+     (Concept: lhs_rhs | Hint: Everything left of the = sign.)
+
+  [MEDIUM — 10 questions]
+
+  Q: Solve 3x + 2 = 11. What is x?
+  A: 3
+     (Concept: balance | Hint: Subtract 2, then divide by 3.)
+
+  Q: Solve 2x − 5 = 9. What is x?
+  A: 7
+     (Concept: transposition | Hint: Add 5, then divide by 2.)
+
+  Q: A number plus 7 equals 15. Write the equation (no spaces).
+  A: x+7=15
+     (Concept: forming | Hint: Let the number = x.)
+
+  Q: Solve x/3 = 4. What is x?
+  A: 12
+     (Concept: balance | Hint: Multiply both sides by 3.)
+
+  Q: Solve 4x + 3 = 19. What is x?
+  A: 4
+     (Concept: transposition | Hint: Subtract 3, divide by 4.)
+
+  Q: In 5x − 3 = 2x + 6, is 5x − 3 the LHS or RHS?
+  A: lhs
+     (Concept: lhs_rhs | Hint: It is to the left of =.)
+
+  Q: Twice a number minus 3 equals 7. Write the equation.
+  A: 2x-3=7
+     (Concept: forming | Hint: Twice = multiply by 2.)
+
+  Q: Solve 5x = 3x + 8. What is x?
+  A: 4
+     (Concept: balance | Hint: Subtract 3x from both sides.)
+
+  Q: Solve 6 − x = 2. What is x?
+  A: 4
+     (Concept: transposition | Hint: Subtract 6, multiply by −1.)
+
+  Q: Is x² − 1 = 0 a linear equation? (yes/no)
+  A: no
+     (Concept: equation | Hint: Linear means the highest power of x is 1.)
+
+  [HARD — 9 questions]
+
+  Q: Solve 4(x + 2) = 20. What is x?
+  A: 3
+     (Concept: balance | Hint: Divide by 4 first: x + 2 = 5.)
+
+  Q: Solve 3x/2 + 1 = 7. What is x?
+  A: 4
+     (Concept: transposition | Hint: Subtract 1, then multiply by 2/3.)
+
+  Q: Solve 2(3x − 1) = 16. What is x?
+  A: 3
+     (Concept: balance | Hint: Expand: 6x − 2 = 16; add 2, divide by 6.)
+
+  Q: In 3x − 2 = 2x + 5, find the value that makes LHS = RHS. x = ?
+  A: 7
+     (Concept: lhs_rhs | Hint: 3x − 2x = 5 + 2.)
+
+  Q: Solve 2x + 3 = 5x − 9. What is x?
+  A: 4
+     (Concept: transposition | Hint: Move x terms left, constants right.)
+
+  Q: Sum of 3 consecutive integers is 24. Middle = x. Write the equation.
+  A: 3x=24
+     (Concept: forming | Hint: (x−1)+x+(x+1)=3x.)
+
+  Q: Solve x/4 − 3 = 1. What is x?
+  A: 16
+     (Concept: balance | Hint: Add 3: x/4 = 4; multiply by 4.)
+
+  Q: Solve 5(x − 2) = 3(x + 4). What is x?
+  A: 11
+     (Concept: transposition | Hint: Expand both sides, collect terms.)
+
+  Q: For 3x + k = 0, if x = −2, find k.
+  A: 6
+     (Concept: equation | Hint: 3(−2) + k = 0; −6 + k = 0.)
+
+
+--------------------------------------------------
+Bank: Solving Linear Equations  [s3_solving]
+--------------------------------------------------
+
+  [EASY — 10 questions]
+
+  Q: Solve 2x = 6. x = ?
+  A: 3
+     (Concept: ax_c | Hint: Divide both sides by 2.)
+
+  Q: Solve x + 3 = 8. x = ?
+  A: 5
+     (Concept: ax_b_c | Hint: Subtract 3 from both sides.)
+
+  Q: Solve 5x = 20. x = ?
+  A: 4
+     (Concept: ax_c | Hint: Divide both sides by 5.)
+
+  Q: Solve x − 2 = 7. x = ?
+  A: 9
+     (Concept: ax_b_c | Hint: Add 2 to both sides.)
+
+  Q: Solve 3x = 15. x = ?
+  A: 5
+     (Concept: ax_c | Hint: Divide both sides by 3.)
+
+  Q: Solve x + 10 = 14. x = ?
+  A: 4
+     (Concept: transposition | Hint: Subtract 10 from both sides.)
+
+  Q: Solve x/2 = 4. x = ?
+  A: 8
+     (Concept: ax_c | Hint: Multiply both sides by 2.)
+
+  Q: Solve 2x + 1 = 5. x = ?
+  A: 2
+     (Concept: ax_b_c | Hint: Subtract 1, then divide by 2.)
+
+  Q: If 4x = 28, find x.
+  A: 7
+     (Concept: ax_c | Hint: Divide 28 by 4.)
+
+  Q: Solve 3x − 3 = 9. x = ?
+  A: 4
+     (Concept: transposition | Hint: Add 3, then divide by 3.)
+
+  [MEDIUM — 10 questions]
+
+  Q: Solve 4x + 5 = 21. x = ?
+  A: 4
+     (Concept: ax_b_c | Hint: Subtract 5, divide by 4.)
+
+  Q: Solve 2(x + 3) = 14. x = ?
+  A: 4
+     (Concept: brackets | Hint: Divide by 2: x + 3 = 7; subtract 3.)
+
+  Q: Solve 3x − 7 = 14. x = ?
+  A: 7
+     (Concept: transposition | Hint: Add 7, divide by 3.)
+
+  Q: Solve x/3 + 2 = 6. x = ?
+  A: 12
+     (Concept: ax_c | Hint: Subtract 2: x/3 = 4; multiply by 3.)
+
+  Q: Solve 3(2x − 1) = 9. x = ?
+  A: 2
+     (Concept: brackets | Hint: Divide by 3: 2x − 1 = 3; add 1; divide by 2.)
+
+  Q: Solve 6x − 4 = 20. x = ?
+  A: 4
+     (Concept: ax_b_c | Hint: Add 4, divide by 6.)
+
+  Q: Solve 5x + 8 = 33. x = ?
+  A: 5
+     (Concept: transposition | Hint: Subtract 8, divide by 5.)
+
+  Q: Solve 4(x − 2) = 8. x = ?
+  A: 4
+     (Concept: brackets | Hint: Divide by 4: x − 2 = 2; add 2.)
+
+  Q: Solve 2x/3 = 8. x = ?
+  A: 12
+     (Concept: ax_c | Hint: Multiply both sides by 3/2.)
+
+  Q: Solve 7x + 2 = 44. x = ?
+  A: 6
+     (Concept: ax_b_c | Hint: Subtract 2, divide by 7.)
+
+  [HARD — 10 questions]
+
+  Q: Solve 3(2x + 1) − 2(x − 2) = 17. x = ?
+  A: 2
+     (Concept: brackets | Hint: Expand: 6x+3−2x+4=17; 4x+7=17.)
+
+  Q: Solve x/2 + x/3 = 5. x = ?
+  A: 6
+     (Concept: fractions | Hint: LCM = 6: multiply through; 3x + 2x = 30.)
+
+  Q: Solve 0.5x + 2.5 = 6. x = ?
+  A: 7
+     (Concept: transposition | Hint: Subtract 2.5, divide by 0.5.)
+
+  Q: Solve −3x + 12 = 0. x = ?
+  A: 4
+     (Concept: ax_b_c | Hint: Move −3x: 12 = 3x; divide.)
+
+  Q: Solve 5(x + 2) = 2(2x + 7). x = ?
+  A: 4
+     (Concept: brackets | Hint: Expand both sides; collect x terms.)
+
+  Q: Solve (x + 3)/2 = (x − 1)/1. x = ?
+  A: 5
+     (Concept: fractions | Hint: Cross multiply: x+3 = 2(x−1); x+3=2x−2.)
+
+  Q: Solve 8 − 3x = 2x − 7. x = ?
+  A: 3
+     (Concept: ax_b_c | Hint: 8+7 = 2x+3x; 15=5x.)
+
+  Q: Solve 2(3x − 4) = 3(x + 1) + 1. x = ?
+  A: 4
+     (Concept: transposition | Hint: 6x−8=3x+3+1; 3x=12.)
+
+  Q: Solve x/4 − x/6 = 1. x = ?
+  A: 12
+     (Concept: fractions | Hint: LCM=12: 3x − 2x = 12.)
+
+  Q: Solve (2x+1)/3 − (x−1)/2 = 1. x = ?
+  A: 5
+     (Concept: brackets | Hint: Multiply by 6: 2(2x+1)−3(x−1)=6; 4x+2−3x+3=6.)
+
+
+--------------------------------------------------
+Bank: Word Problems  [s4_word]
+--------------------------------------------------
+
+  [EASY — 9 questions]
+
+  Q: A number plus 5 is 12. What is the number?
+  A: 7
+     (Concept: simple_word | Hint: x + 5 = 12.)
+
+  Q: Twice a number is 16. What is the number?
+  A: 8
+     (Concept: simple_word | Hint: 2x = 16.)
+
+  Q: Anu is 10 years old. In x years she will be 15. Find x.
+  A: 5
+     (Concept: age | Hint: 10 + x = 15.)
+
+  Q: A number minus 3 equals 9. What is the number?
+  A: 12
+     (Concept: simple_word | Hint: x − 3 = 9.)
+
+  Q: 3 pens cost Rs. 15. Cost of 1 pen = ?
+  A: 5
+     (Concept: money | Hint: 3x = 15.)
+
+  Q: A square has perimeter 20. Side length = ?
+  A: 5
+     (Concept: perimeter | Hint: 4x = 20.)
+
+  Q: Sum of x and 8 is 20. Find x.
+  A: 12
+     (Concept: simple_word | Hint: x + 8 = 20.)
+
+  Q: 6 apples cost Rs. 30. Price per apple?
+  A: 5
+     (Concept: money | Hint: 6x = 30.)
+
+  Q: Perimeter of a rectangle 2(l + 3) = 18. Find l.
+  A: 6
+     (Concept: perimeter | Hint: l + 3 = 9.)
+
+  [MEDIUM — 9 questions]
+
+  Q: A car travels at x km/h for 3 h, covering 90 km. Find x.
+  A: 30
+     (Concept: speed | Hint: 3x = 90.)
+
+  Q: Perimeter of rectangle = 36. Length = 2× width. Find width.
+  A: 6
+     (Concept: perimeter | Hint: 2(w + 2w) = 36; 6w = 36.)
+
+  Q: 4 books cost Rs. 60 more than 1 book. Total cost Rs. 80. Cost of 1 book?
+  A: 20
+     (Concept: money | Hint: 4x = x + 60; 3x = 60.)
+
+  Q: One number is 3 more than another. Their sum is 21. Smaller number?
+  A: 9
+     (Concept: simple_word | Hint: x + (x+3) = 21; 2x = 18.)
+
+  Q: Riya is 12 now. In how many years will she be 3 times her current age?
+  A: 12
+     (Concept: age | Hint: Wait — 3×12=36; 12+x=36.)
+
+  Q: A cyclist goes x km/h for 2h and covers 24 km. Find x.
+  A: 12
+     (Concept: speed | Hint: 2x = 24.)
+
+  Q: Perimeter of triangle with sides x, x+2, x+4 is 21. Find x.
+  A: 5
+     (Concept: perimeter | Hint: 3x + 6 = 21; 3x = 15.)
+
+  Q: Cost of 5 items = cost of 2 items + Rs. 18. Cost per item?
+  A: 6
+     (Concept: money | Hint: 5x = 2x + 18; 3x = 18.)
+
+  Q: Three times a number, reduced by 4, equals 14. Find the number.
+  A: 6
+     (Concept: simple_word | Hint: 3x − 4 = 14; 3x = 18.)
+
+  [HARD — 7 questions]
+
+  Q: Two trains 200 km apart, moving toward each other at 40 and 60 km/h. Time to meet?
+  A: 2
+     (Concept: speed | Hint: (40+60)t = 200; 100t = 200.)
+
+  Q: A shopkeeper sold an item for Rs. 540, gaining 8%. Cost price?
+  A: 500
+     (Concept: money | Hint: CP × 1.08 = 540.)
+
+  Q: Sum of 3 consecutive odd numbers is 57. Find the middle one.
+  A: 19
+     (Concept: simple_word | Hint: (n−2)+n+(n+2)=57; 3n=57.)
+
+  Q: Mixture of 30 kg. One part Rs.6/kg, other Rs.9/kg. Average Rs.7/kg. How many kg at Rs.6?
+  A: 20
+     (Concept: money | Hint: 6x + 9(30−x) = 7×30; 6x+270−9x=210.)
+
+  Q: A boat goes 12 km upstream in 3h and 12 km downstream in 2h. Speed of stream?
+  A: 1
+     (Concept: speed | Hint: Upstream speed = 4, downstream = 6; stream = (6−4)/2.)
+
+  Q: Area of square exceeds area of rectangle (3×x) by 1. Square side = 4. Find x.
+  A: 5
+     (Concept: perimeter | Hint: 16 − 3x = 1; 3x = 15.)
+
+  Q: A fraction equals 3/5. If numerator +3, fraction = 3/4. Find denominator.
+  A: 20
+     (Concept: simple_word | Hint: (n+3)/d = 3/4 and n/d = 3/5; n=3d/5; (3d/5+3)/d=3/4.)
+
+
+--------------------------------------------------
+Bank: Variables on Both Sides  [s5_advanced]
+--------------------------------------------------
+
+  [EASY — 10 questions]
+
+  Q: Solve 3x = x + 6. x = ?
+  A: 3
+     (Concept: collect_vars | Hint: Subtract x: 2x = 6.)
+
+  Q: Solve 4x = 2x + 8. x = ?
+  A: 4
+     (Concept: collect_vars | Hint: Subtract 2x: 2x = 8.)
+
+  Q: Solve 5x = 3x + 4. x = ?
+  A: 2
+     (Concept: larger_coeff | Hint: Subtract 3x: 2x = 4.)
+
+  Q: Solve 6x − 2 = 4x + 6. x = ?
+  A: 4
+     (Concept: collect_vars | Hint: Subtract 4x, add 2: 2x = 8.)
+
+  Q: Solve 7x = 4x + 9. x = ?
+  A: 3
+     (Concept: larger_coeff | Hint: Subtract 4x: 3x = 9.)
+
+  Q: Solve 2x + 3 = x + 7. x = ?
+  A: 4
+     (Concept: with_negatives | Hint: Subtract x: x + 3 = 7; subtract 3.)
+
+  Q: Solve 5x + 1 = 3x + 9. x = ?
+  A: 4
+     (Concept: collect_vars | Hint: Subtract 3x: 2x + 1 = 9; subtract 1; divide by 2.)
+
+  Q: Solve 8x − 5 = 5x + 7. x = ?
+  A: 4
+     (Concept: larger_coeff | Hint: Subtract 5x: 3x − 5 = 7; add 5; divide by 3.)
+
+  Q: Solve 3x − 4 = x + 2. x = ?
+  A: 3
+     (Concept: with_negatives | Hint: Subtract x: 2x − 4 = 2; add 4; divide by 2.)
+
+  Q: Solve 9x = 6x + 12. x = ?
+  A: 4
+     (Concept: collect_vars | Hint: Subtract 6x: 3x = 12.)
+
+  [MEDIUM — 10 questions]
+
+  Q: Solve 2(x + 1) = x + 5. x = ?
+  A: 3
+     (Concept: brackets_both | Hint: 2x + 2 = x + 5; subtract x.)
+
+  Q: Solve 5x + 2 = 3x + 10. x = ?
+  A: 4
+     (Concept: larger_coeff | Hint: 5x − 3x = 10 − 2; 2x = 8.)
+
+  Q: Solve 6x − 3 = 4x + 7. x = ?
+  A: 5
+     (Concept: with_negatives | Hint: 6x − 4x = 7 + 3; 2x = 10.)
+
+  Q: Solve 3(x + 2) = 2(x + 4). x = ?
+  A: 2
+     (Concept: brackets_both | Hint: 3x + 6 = 2x + 8; subtract 2x and 6.)
+
+  Q: Solve x/2 = 6/4. x = ?
+  A: 3
+     (Concept: cross_mult | Hint: Cross multiply: 4x = 12.)
+
+  Q: Solve 4x + 3 = 2x + 11. x = ?
+  A: 4
+     (Concept: collect_vars | Hint: 2x = 8; x = 4.)
+
+  Q: Solve 7x − 4 = 4x + 8. x = ?
+  A: 4
+     (Concept: with_negatives | Hint: 3x = 12.)
+
+  Q: Solve 4(x − 1) = 3(x + 2). x = ?
+  A: 10
+     (Concept: brackets_both | Hint: 4x − 4 = 3x + 6; subtract 3x; add 4.)
+
+  Q: Solve (x+1)/(x−1) = 2. x = ?
+  A: 3
+     (Concept: cross_mult | Hint: x + 1 = 2(x−1); x+1=2x−2; 3=x.)
+
+  Q: Solve 10x − 7 = 7x + 8. x = ?
+  A: 5
+     (Concept: larger_coeff | Hint: 3x = 15.)
+
+  [HARD — 10 questions]
+
+  Q: Solve 2(3x − 1) = 3(2x + 1) − 5. x = ?
+  A: infinite
+     (Concept: brackets_both | Hint: 6x − 2 = 6x + 3 − 5 = 6x − 2. Always true!)
+
+  Q: Solve (2x+1)/3 = (x+2)/2. x = ?
+  A: 1
+     (Concept: cross_mult | Hint: Cross: 2(2x+1)=3(x+2); 4x+2=3x+6; x=4. Check again: 4x+2=3x+6.)
+
+  Q: Solve 3(2x − 5) − 4(x − 3) = 2. x = ?
+  A: 4
+     (Concept: with_negatives | Hint: 6x−15−4x+12=2; 2x−3=2; 2x=5.)
+
+  Q: Solve (5x−1)/2 − (3x+1)/4 = 2. x = ?
+  A: 3
+     (Concept: larger_coeff | Hint: Multiply by 4: 2(5x−1)−(3x+1)=8; 10x−2−3x−1=8; 7x=11.)
+
+  Q: Solve 0.3x + 0.7 = 0.2x + 1.1. x = ?
+  A: 4
+     (Concept: collect_vars | Hint: 0.1x = 0.4; x = 4.)
+
+  Q: Solve 5(x+1) − 3(x−2) = 2(x+4). x = ?
+  A: 0
+     (Concept: brackets_both | Hint: 5x+5−3x+6=2x+8; 2x+11=2x+8. No solution? Check: 11≠8.)
+
+  Q: Solve (x+2)/(x+3) = 4/5. x = ?
+  A: 2
+     (Concept: cross_mult | Hint: 5(x+2)=4(x+3); 5x+10=4x+12; x=2.)
+
+  Q: Solve 4 − 3(x − 2) = 2 − (x + 1). x = ?
+  A: 4
+     (Concept: with_negatives | Hint: 4−3x+6=2−x−1; 10−3x=1−x; 9=2x.)
+
+  Q: Solve x + x/2 + x/3 = 11. x = ?
+  A: 6
+     (Concept: collect_vars | Hint: Multiply by 6: 6x+3x+2x=66; 11x=66.)
+
+  Q: Solve 2(x+1)/3 = (3x−2)/4. x = ?
+  A: 16
+     (Concept: brackets_both | Hint: Multiply by 12: 8(x+1)=3(3x−2); 8x+8=9x−6; 14=x.)
+
+
+======================================================================
+PRE-ASSESSMENT DIAGNOSTIC QUESTIONS
+======================================================================
+
+  Level: NOVICE
+
+  Q: If x + 3 = 7, what is x?
+     Options: 2 | 3 | 4 | 5
+  A: 4
+
+  Q: Which of these is a linear equation?
+     Options: x² = 4 | 2x + 1 = 7 | x³ = 8 | √x = 2
+  A: 2x + 1 = 7
+
+  Q: What does 'solving an equation' mean?
+     Options: Finding a pattern | Finding the value of the unknown | Drawing a graph | Counting terms
+  A: Finding the value of the unknown
+
+
+  Level: BEGINNER
+
+  Q: Solve: 2x = 10. What is x?
+     Options: 2 | 5 | 10 | 20
+  A: 5
+
+  Q: Solve: x – 4 = 9. What is x?
+     Options: 5 | 13 | 4 | 9
+  A: 13
+
+  Q: If 3x + 2 = 11, what is x?
+     Options: 3 | 4 | 9 | 2
+  A: 3
+
+  Q: What operation undoes multiplication?
+     Options: Addition | Subtraction | Division | Squaring
+  A: Division
+
+
+  Level: INTERMEDIATE
+
+  Q: Solve: 2x + 5 = 15. What is x?
+     Options: 5 | 10 | 7 | 4
+  A: 5
+
+  Q: Solve: 4(x – 2) = 12. What is x?
+     Options: 5 | 4 | 3 | 7
+  A: 5
+
+  Q: Solve: 3x = x + 8. What is x?
+     Options: 2 | 4 | 8 | 3
+  A: 4
+
+  Q: A number doubled then reduced by 3 equals 11. What is the number?
+     Options: 4 | 7 | 8 | 5
+  A: 7
+
+  Q: Solve: x/3 + 2 = 5. What is x?
+     Options: 6 | 9 | 3 | 12
+  A: 9
+
+
+  Level: ADVANCED
+
+  Q: Solve: 5x + 2 = 3x + 10. What is x?
+     Options: 3 | 4 | 5 | 6
+  A: 4
+
+  Q: Solve: 2(x + 3) = 3(x – 1). What is x?
+     Options: 6 | 9 | 3 | 12
+  A: 9
+
+  Q: If 2/x = 4/6, what is x?
+     Options: 2 | 3 | 4 | 6
+  A: 3
+
+  Q: A father is 4 times as old as his son. In 6 years he'll be twice as old. What is the son's current age?
+     Options: 6 | 8 | 9 | 12
+  A: 6
+
+  Q: Solve: 3(2x – 1) – 2(x + 4) = 1. What is x?
+     Options: 2 | 3 | 4 | 5
+  A: 3
+

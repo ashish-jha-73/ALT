@@ -1,0 +1,193 @@
+/* ===================================================================
+   DESIGN SYSTEM — Algebra Quest Adaptive Tutor
+   =================================================================== */
+
+:root {
+  /* --- Colors --- */
+  --bg-body: #faf8f3;
+  --bg-sidebar: #0f0e0c;
+  --bg-sidebar-hover: #1a1917;
+  --bg-sidebar-active: #2a2825;
+  --bg-card: #ffffff;
+  --bg-card-alt: #f5f3ee;
+  --bg-input: #ffffff;
+  --bg-hint: #fdf8f0;
+  --bg-code: #f7f5f0;
+
+  --clr-primary: #c8902a;
+  --clr-primary-light: #e8b85c;
+  --clr-primary-bg: #fdf5e8;
+  --clr-primary-dark: #a07020;
+  --clr-secondary: #1a7a6e;
+  --clr-secondary-light: #2aa396;
+  --clr-secondary-bg: #e8f5f3;
+
+  --clr-success: #2b8a4a;
+  --clr-success-bg: #eaf7ee;
+  --clr-success-light: #d4f0dc;
+  --clr-error: #c0392b;
+  --clr-error-bg: #fdecea;
+  --clr-error-light: #f8d7d3;
+  --clr-warning: #d4880f;
+  --clr-warning-bg: #fef6e7;
+
+  --clr-text: #1a1a18;
+  --clr-text-secondary: #5c5a54;
+  --clr-text-muted: #8a8880;
+  --clr-text-inverse: #faf8f3;
+  --clr-text-sidebar: #b0ada6;
+  --clr-text-sidebar-bright: #e8e6e0;
+
+  --clr-border: #e4e0d8;
+  --clr-border-light: #ede9e2;
+  --clr-border-sidebar: #2a2825;
+
+  /* --- Typography --- */
+  --font-heading: 'DM Serif Display', Georgia, serif;
+  --font-body: 'Outfit', -apple-system, BlinkMacSystemFont, sans-serif;
+  --font-mono: 'DM Mono', 'Fira Code', monospace;
+
+  --fs-xs: 0.75rem;
+  --fs-sm: 0.8125rem;
+  --fs-base: 0.9375rem;
+  --fs-md: 1rem;
+  --fs-lg: 1.125rem;
+  --fs-xl: 1.375rem;
+  --fs-2xl: 1.75rem;
+  --fs-3xl: 2.25rem;
+
+  --fw-light: 300;
+  --fw-regular: 400;
+  --fw-medium: 500;
+  --fw-semibold: 600;
+  --fw-bold: 700;
+
+  --lh-tight: 1.25;
+  --lh-normal: 1.5;
+  --lh-relaxed: 1.7;
+
+  /* --- Spacing --- */
+  --sp-1: 4px;
+  --sp-2: 8px;
+  --sp-3: 12px;
+  --sp-4: 16px;
+  --sp-5: 20px;
+  --sp-6: 24px;
+  --sp-8: 32px;
+  --sp-10: 40px;
+  --sp-12: 48px;
+
+  /* --- Borders & Radius --- */
+  --radius-sm: 6px;
+  --radius-md: 10px;
+  --radius-lg: 14px;
+  --radius-xl: 20px;
+  --radius-full: 999px;
+
+  /* --- Shadows --- */
+  --shadow-sm: 0 1px 3px rgba(15, 14, 12, 0.04);
+  --shadow-md: 0 4px 12px rgba(15, 14, 12, 0.06);
+  --shadow-lg: 0 8px 24px rgba(15, 14, 12, 0.08);
+  --shadow-xl: 0 16px 48px rgba(15, 14, 12, 0.1);
+  --shadow-glow-primary: 0 0 20px rgba(200, 144, 42, 0.15);
+  --shadow-glow-success: 0 0 20px rgba(43, 138, 74, 0.15);
+
+  /* --- Layout --- */
+  --sidebar-width: 280px;
+  --header-height: 64px;
+
+  /* --- Transitions --- */
+  --ease-out: cubic-bezier(0.25, 0.46, 0.45, 0.94);
+  --ease-spring: cubic-bezier(0.34, 1.56, 0.64, 1);
+  --duration-fast: 150ms;
+  --duration-normal: 250ms;
+  --duration-slow: 400ms;
+  --duration-slower: 600ms;
+}
+
+/* === GLOBAL RESET === */
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+html {
+  height: 100%;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  text-rendering: optimizeLegibility;
+}
+
+body {
+  height: 100%;
+  font-family: var(--font-body);
+  font-size: var(--fs-base);
+  font-weight: var(--fw-regular);
+  line-height: var(--lh-normal);
+  color: var(--clr-text);
+  background: var(--bg-body);
+}
+
+#root {
+  height: 100%;
+}
+
+h1, h2, h3, h4, h5, h6 {
+  font-family: var(--font-heading);
+  font-weight: var(--fw-regular);
+  line-height: var(--lh-tight);
+  color: var(--clr-text);
+}
+
+code, pre, .mono {
+  font-family: var(--font-mono);
+}
+
+a {
+  color: var(--clr-primary);
+  text-decoration: none;
+}
+
+button {
+  font-family: var(--font-body);
+  cursor: pointer;
+  border: none;
+  background: none;
+}
+
+input, textarea, select {
+  font-family: var(--font-body);
+  font-size: var(--fs-base);
+}
+
+ul, ol {
+  list-style: none;
+}
+
+img, svg {
+  display: block;
+  max-width: 100%;
+}
+
+/* === SCROLLBAR STYLING === */
+
+::-webkit-scrollbar {
+  width: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  background: var(--clr-border);
+  border-radius: var(--radius-full);
+}
+
+.sidebar::-webkit-scrollbar-thumb {
+  background: var(--clr-border-sidebar);
+}
