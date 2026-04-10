@@ -604,8 +604,25 @@ function App() {
     });
   }
 
-  function continueAfterEnd() {
-    resetSessionContext();
+  async function continueAfterEnd() {
+    if (sessionSubmission?.submitted) {
+      resetSessionContext();
+      return;
+    }
+
+    setAttemptsInSession(0);
+    setHintsUsedSession(0);
+    setSummary(null);
+    setFeedback(null);
+    setActiveMissionConcept('');
+    setSessionSubmission(null);
+    autoCompletedSubmitAttemptedRef.current = false;
+    setError('');
+    setScreen('map');
+
+    const progressData = await loadProgress();
+    const conceptMapData = await loadConceptMap();
+    setActiveMissionConcept(resolveMissionConcept(progressData, conceptMapData));
   }
 
   async function handleSubmitSession(finalStatus = 'completed') {

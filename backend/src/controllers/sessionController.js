@@ -39,6 +39,19 @@ function delay(ms) {
   return new Promise((resolve) => setTimeout(resolve, ms));
 }
 
+function isRetryableStatus(status) {
+  return status === 429 || status >= 500;
+}
+
+function buildExternalApiError(status, parsedBody) {
+  const error = new Error(`External API ${status}`);
+  error.name = 'ExternalRecommendationError';
+  error.status = status;
+  error.responseBody = parsedBody;
+  error.retryable = isRetryableStatus(status);
+  return error;
+}
+
 async function postWithRetry(url, options, retries = 2) {
   let lastError = null;
 
@@ -55,12 +68,18 @@ async function postWithRetry(url, options, retries = 2) {
       }
 
       if (!response.ok) {
-        throw new Error(`External API ${response.status}: ${JSON.stringify(parsed)}`);
+        throw buildExternalApiError(response.status, parsed);
       }
 
       return parsed;
     } catch (error) {
       lastError = error;
+
+      // Do not retry client/auth errors from upstream API.
+      if (error.name === 'ExternalRecommendationError' && !error.retryable) {
+        break;
+      }
+
       if (attempt >= retries) {
         break;
       }
@@ -333,13 +352,35 @@ async function submitSession(req, res) {
       session.failed_submission = {
         payload,
         error_message: error.message,
+        error_status: error.status || null,
+        error_response: error.responseBody || null,
         updated_at: new Date().toISOString(),
       };
       await session.save();
 
-      return res.status(502).json({
+      const upstreamStatus = Number.isInteger(error.status) ? error.status : null;
+      const responseStatus = upstreamStatus || 502;
+
+      console.error('Recommendation submit failed', {
+        student_id: session.student_id,
+        session_id: session.session_id,
+        upstream_status: upstreamStatus,
+        upstream_response: error.responseBody || null,
+        error_message: error.message,
+      });
+
+      let message = 'Failed to submit session payload to recommendation API';
+      if (upstreamStatus === 401 || upstreamStatus === 403) {
+        message = 'Recommendation API rejected authorization token';
+      } else if (upstreamStatus === 400) {
+        message = 'Recommendation API rejected session payload';
+      }
+
+      return res.status(responseStatus).json({
         submitted: false,
-        message: 'Failed to submit session payload to recommendation API',
+        message,
+        upstream_status: upstreamStatus,
+        upstream_response: error.responseBody || null,
         error: error.message,
       });
     }
