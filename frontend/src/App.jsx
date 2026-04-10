@@ -27,7 +27,8 @@ import {
 } from './services/api';
 
 const SESSION_TARGET_QUESTIONS = 10;
-const CHAPTER_ID = import.meta.env.VITE_CHAPTER_ID || 'grade8_linear_eq';
+const CHAPTER_ID = import.meta.env.VITE_CHAPTER_ID || 'grade8_linear_equations_in_one_variable';
+const FINAL_CHAPTER_CONCEPT_ID = 'word_problems_advanced';
 const SESSION_STORAGE = {
   token: 'token',
   studentId: 'student_id',
@@ -70,6 +71,21 @@ function resolveMissionConcept(progressData, conceptMapData, previousConcept = '
   }
 
   return current || 'expressions_foundation';
+}
+
+function isChapterCompleted(progressData, conceptMapData) {
+  const nodes = conceptMapData?.nodes || [];
+  if (nodes.length > 0) {
+    const completedNodes = nodes.filter((node) => node.status === 'completed').length;
+    const allConceptsCompleted = completedNodes === nodes.length;
+    const finalConceptCompleted = nodes.some(
+      (node) => node.id === FINAL_CHAPTER_CONCEPT_ID && node.status === 'completed'
+    );
+
+    return allConceptsCompleted && finalConceptCompleted;
+  }
+
+  return false;
 }
 
 function readSessionContextFromUrl() {
@@ -180,6 +196,7 @@ function App() {
   const [teachingContext, setTeachingContext] = useState(null);
   const [activeMissionConcept, setActiveMissionConcept] = useState('');
   const [sessionSubmission, setSessionSubmission] = useState(null);
+  const [chapterCompleted, setChapterCompleted] = useState(false);
   const [sessionMetricsLocked, setSessionMetricsLocked] = useState(false);
   const [submittingSession, setSubmittingSession] = useState(false);
   const [loading, setLoading] = useState(false);
@@ -188,7 +205,9 @@ function App() {
   const retryingStoredSubmissionRef = useRef(false);
   const autoCompletedSubmitAttemptedRef = useRef(false);
 
-  function resetSessionContext() {
+  function resetSessionContext(
+    message = 'Session cleared. Reopen with /chapter?token=<jwt>&student_id=<id>&session_id=<id>'
+  ) {
     if (sessionContext?.session_id) {
       clearFailedSubmission(sessionContext.session_id);
     }
@@ -207,10 +226,11 @@ function App() {
     setPendingRetryAttempts(1);
     setActiveMissionConcept('');
     setSessionSubmission(null);
+    setChapterCompleted(false);
     setSessionMetricsLocked(false);
     exitSubmissionSentRef.current = false;
     autoCompletedSubmitAttemptedRef.current = false;
-    setError('Session cleared. Reopen with /chapter?token=<jwt>&student_id=<id>&session_id=<id>');
+    setError(message);
   }
 
   useEffect(() => {
@@ -269,7 +289,7 @@ function App() {
         setLoading(true);
         setError('');
 
-        await startSession({
+        const startedSession = await startSession({
           student_id: sessionContext.student_id,
           session_id: sessionContext.session_id,
           chapter_id: sessionContext.chapter_id || CHAPTER_ID,
@@ -279,6 +299,42 @@ function App() {
         exitSubmissionSentRef.current = false;
         autoCompletedSubmitAttemptedRef.current = false;
         setSessionMetricsLocked(false);
+
+        if (startedSession?.status === 'submitted' || startedSession?.status === 'submitting') {
+          setChapterCompleted(true);
+          setSessionMetricsLocked(true);
+          autoCompletedSubmitAttemptedRef.current = true;
+
+          let existingRecommendation = startedSession?.submitted_response || null;
+          if (!existingRecommendation && startedSession?.status === 'submitted') {
+            try {
+              const existingResponse = await submitSession({
+                student_id: sessionContext.student_id,
+                session_id: sessionContext.session_id,
+                chapter_id: sessionContext.chapter_id || CHAPTER_ID,
+                token: sessionContext.token,
+                session_status: 'completed',
+              });
+              existingRecommendation = existingResponse?.recommendation || null;
+            } catch (existingError) {
+              if (existingError?.status === 409 && existingError?.payload?.recommendation) {
+                existingRecommendation = existingError.payload.recommendation;
+              }
+            }
+          }
+
+          if (startedSession?.status === 'submitted') {
+            setSessionSubmission({
+              submitted: true,
+              recommendation: existingRecommendation || {},
+            });
+          }
+
+          await loadSummary();
+          setScreen('end');
+          setError('This session_id is already submitted. Open the chapter from the portal to get a new session_id.');
+          return;
+        }
 
         const storedSubmission = readFailedSubmission(sessionContext.session_id);
         if (storedSubmission && !retryingStoredSubmissionRef.current) {
@@ -317,6 +373,7 @@ function App() {
         const existingAttempted = Number(existingMetrics.questions_attempted || 0);
         const existingTotal = Number(existingMetrics.total_questions || SESSION_TARGET_QUESTIONS);
         setSessionMetricsLocked(existingTotal > 0 && existingAttempted >= existingTotal);
+        setChapterCompleted(isChapterCompleted(progressData, conceptMapData));
         setActiveMissionConcept(resolveMissionConcept(progressData, conceptMapData));
 
         try {
@@ -348,7 +405,7 @@ function App() {
     if (!sessionContext) return undefined;
 
     function buildExitPayload() {
-      const resolvedStatus = screen === 'end' ? 'completed' : 'exited_midway';
+      const resolvedStatus = chapterCompleted ? 'completed' : 'exited_midway';
       return {
         student_id: sessionContext.student_id,
         session_id: sessionContext.session_id,
@@ -422,22 +479,7 @@ function App() {
       window.removeEventListener('beforeunload', handleBeforeUnload);
       window.removeEventListener('pagehide', handlePageHide);
     };
-  }, [screen, sessionContext, sessionSubmission?.submitted, submittingSession]);
-
-  useEffect(() => {
-    if (
-      !sessionContext
-      || screen !== 'end'
-      || sessionSubmission?.submitted
-      || submittingSession
-      || autoCompletedSubmitAttemptedRef.current
-    ) {
-      return;
-    }
-
-    autoCompletedSubmitAttemptedRef.current = true;
-    handleSubmitSession('completed');
-  }, [screen, sessionContext, sessionSubmission?.submitted, submittingSession]);
+  }, [chapterCompleted, screen, sessionContext, sessionSubmission?.submitted, submittingSession]);
 
   async function handleDiagnosticSubmit(answers) {
     try {
@@ -581,6 +623,9 @@ function App() {
         topic_completion_ratio: Math.max(0, Math.min(1, completedCount / nodeCount)),
       });
 
+      const chapterDoneNow = isChapterCompleted(updatedProgress, updatedConceptMap);
+      setChapterCompleted(chapterDoneNow);
+
       const newCompleted = updatedProgress?.progress?.completed_concepts || [];
       const justMastered = newCompleted.find((c) => !prevCompleted.includes(c));
       if (justMastered) {
@@ -598,14 +643,25 @@ function App() {
       const nextCount = attemptsInSession + 1;
       setAttemptsInSession(nextCount);
 
-      if (nextCount >= SESSION_TARGET_QUESTIONS) {
+      if (chapterDoneNow) {
+        // Freeze metrics only when full chapter completion is reached.
         setSessionMetricsLocked(true);
         await loadSummary();
         setScreen('end');
-      } else {
-        await loadNextQuestion(missionConcept || undefined);
-        setScreen('feedback');
+        return;
       }
+
+      if (nextCount >= SESSION_TARGET_QUESTIONS) {
+        // Intermediate checkpoint only; final submission remains disabled until chapter completion.
+        setSessionMetricsLocked(true);
+        setAttemptsInSession(0);
+        setError('Checkpoint reached. Continue learning to complete the full chapter before final submission.');
+        setScreen('map');
+        return;
+      }
+
+      await loadNextQuestion(missionConcept || undefined);
+      setScreen('feedback');
     } catch (err) {
       setError(err.message);
     } finally {
@@ -649,7 +705,7 @@ function App() {
 
   async function continueAfterEnd() {
     if (sessionSubmission?.submitted) {
-      resetSessionContext();
+      resetSessionContext('Session submitted successfully. Open the chapter from the portal to start a new session.');
       return;
     }
 
@@ -666,11 +722,17 @@ function App() {
 
     const progressData = await loadProgress();
     const conceptMapData = await loadConceptMap();
+    setChapterCompleted(isChapterCompleted(progressData, conceptMapData));
     setActiveMissionConcept(resolveMissionConcept(progressData, conceptMapData));
   }
 
   async function handleSubmitSession(finalStatus = 'completed') {
     if (!sessionContext) return;
+
+    if (finalStatus === 'completed' && !chapterCompleted) {
+      setError('Chapter is not complete yet. Continue learning; submit only at final chapter completion.');
+      return;
+    }
 
     const payload = {
       student_id: sessionContext.student_id,
@@ -873,6 +935,7 @@ function App() {
                onContinue={continueAfterEnd}
                onSubmitSession={handleSubmitSession}
                submittingSession={submittingSession}
+               chapterCompleted={chapterCompleted}
                sessionSubmission={sessionSubmission}
              />
            )}

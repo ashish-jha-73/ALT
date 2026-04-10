@@ -1,7 +1,7 @@
 const Session = require('../models/Session');
 const { getRequiredSessionIdentity, resolveChapterId } = require('../utils/sessionContext');
 
-const DEFAULT_CHAPTER_ID = (process.env.CHAPTER_ID || 'grade8_linear_eq').trim();
+const DEFAULT_CHAPTER_ID = (process.env.CHAPTER_ID || 'grade8_linear_equations_in_one_variable').trim();
 
 const DIAGNOSTIC_QUESTIONS = [
   // Novice (weight 1)

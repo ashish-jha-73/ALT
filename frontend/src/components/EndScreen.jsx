@@ -13,6 +13,7 @@ export default function EndScreen({
   onContinue,
   onSubmitSession,
   submittingSession,
+  chapterCompleted,
   sessionSubmission,
 }) {
   const mastery = summary?.mastery || {};
@@ -180,12 +181,14 @@ export default function EndScreen({
               </p>
             ) : null}
           </>
+        ) : chapterCompleted ? (
+          <p className="end-screen__empty">Chapter complete. Submit once to receive recommendation.next_steps.</p>
         ) : (
-          <p className="end-screen__empty">Submit this session to receive recommendation.next_steps.</p>
+          <p className="end-screen__empty">Checkpoint reached. Final submission unlocks only after Advanced Word Problems and full chapter mastery are complete.</p>
         )}
       </div>
 
-      {!sessionSubmission?.submitted && (
+      {!sessionSubmission?.submitted && chapterCompleted && (
         <button
           type="button"
           className="btn-primary"
@@ -200,7 +203,7 @@ export default function EndScreen({
       <button type="button" className="btn-primary" onClick={onContinue} disabled={!canContinue}>
         {sessionSubmission?.submitted
           ? 'Finish Session'
-          : 'Start Learning Anyway'}
+          : 'Continue Learning'}
       </button>
     </div>
   );

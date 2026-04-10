@@ -6,11 +6,12 @@ const {
 } = require('../utils/sessionContext');
 
 const EXTERNAL_RECOMMENDATION_URL = 'https://kaushik-dev.online/api/recommend/';
-const CHAPTER_ID = (process.env.CHAPTER_ID || 'grade8_linear_eq').trim();
+const CHAPTER_ID = (process.env.CHAPTER_ID || 'grade8_linear_equations_in_one_variable').trim();
 const CHAPTER_ID_ALIASES = String(process.env.CHAPTER_ID_ALIASES || '')
   .split(',')
   .map((item) => item.trim())
   .filter(Boolean);
+const SHARE_RETRY_COUNT = String(process.env.SHARE_RETRY_COUNT || 'true').trim().toLowerCase() !== 'false';
 
 const TRACKED_NUMERIC_FIELDS = [
   'correct_answers',
@@ -74,8 +75,12 @@ function buildChapterIdCandidates(primaryChapterId) {
   const gradePrefix = parseGradePrefix(primary) || parseGradePrefix(CHAPTER_ID) || 'grade8';
   push(`${gradePrefix}_linear_eq`);
   push(`${gradePrefix}-linear-eq`);
+  push(`${gradePrefix}_linear_equations_in_one_variable`);
+  push(`${gradePrefix}-linear-equations-in-one-variable`);
   push(`${gradePrefix}_linear_equations_one_variable`);
   push(`${gradePrefix}-linear-equations-one-variable`);
+  push(`${gradePrefix}_linear_equations_algebraic_expressions`);
+  push(`${gradePrefix}-linear-equations-algebraic-expressions`);
 
   CHAPTER_ID_ALIASES.forEach((alias) => push(alias));
 
@@ -177,6 +182,10 @@ async function postWithRetry(url, options, retries = 2) {
 }
 
 function buildSubmissionPayload(session, sessionStatus) {
+  const retryCountForRecommendation = SHARE_RETRY_COUNT
+    ? toNonNegativeInteger(session.retry_count)
+    : 0;
+
   return {
     student_id: session.student_id,
     session_id: session.session_id,
@@ -187,7 +196,7 @@ function buildSubmissionPayload(session, sessionStatus) {
     wrong_answers: toNonNegativeInteger(session.wrong_answers),
     questions_attempted: toNonNegativeInteger(session.questions_attempted),
     total_questions: toNonNegativeInteger(session.total_questions),
-    retry_count: toNonNegativeInteger(session.retry_count),
+    retry_count: retryCountForRecommendation,
     hints_used: toNonNegativeInteger(session.hints_used),
     total_hints_embedded: toNonNegativeInteger(session.total_hints_embedded),
     time_spent_seconds: toNonNegativeInteger(session.time_spent_seconds),
@@ -271,6 +280,7 @@ async function startSession(req, res) {
       session_id: session.session_id,
       chapter_id: session.chapter_id,
       status: session.status,
+      submitted_response: session.submitted_response || null,
       metrics: {
         correct_answers: session.correct_answers,
         wrong_answers: session.wrong_answers,
