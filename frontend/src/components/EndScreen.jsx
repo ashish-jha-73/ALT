@@ -33,21 +33,34 @@ export default function EndScreen({
 
   const recommendation = useMemo(() => {
     if (!sessionSubmission?.recommendation) return {};
-    return sessionSubmission.recommendation?.recommendation || sessionSubmission.recommendation;
+    return sessionSubmission.recommendation;
   }, [sessionSubmission]);
 
-  const learningState = sessionSubmission?.recommendation?.learning_state || recommendation.learning_state || '';
-  const recommendationReason = recommendation.reason || sessionSubmission?.recommendation?.reason || '';
-  const prerequisiteUrl = recommendation.prerequisite_url || sessionSubmission?.recommendation?.prerequisite_url || '';
-  const recommendationType = recommendation.type || sessionSubmission?.recommendation?.type || '';
+  const recommendationBlock = recommendation?.recommendation || {};
+  const diagnosis = recommendation?.diagnosis || {};
+  const diagnosisHistory = diagnosis?.history || {};
+
+  const learningState = recommendation?.learning_state || '';
+  const recommendationReason = recommendationBlock.reason || recommendation?.reason || '';
+  const recommendationType = recommendationBlock.type || recommendation?.type || '';
+  const prerequisiteUrl = recommendationBlock.prerequisite_url || recommendation?.prerequisite_url || '';
 
   const nextSteps = useMemo(() => {
-    const nested = recommendation?.next_steps;
-    const direct = sessionSubmission?.recommendation?.next_steps;
+    const nested = recommendationBlock?.next_steps;
+    const direct = recommendation?.next_steps;
     if (Array.isArray(nested)) return nested;
     if (Array.isArray(direct)) return direct;
     return [];
-  }, [recommendation, sessionSubmission]);
+  }, [recommendation, recommendationBlock]);
+
+  const recommendationResponseText = useMemo(() => {
+    if (!recommendation || Object.keys(recommendation).length === 0) return '';
+    try {
+      return JSON.stringify(recommendation, null, 2);
+    } catch (_error) {
+      return '';
+    }
+  }, [recommendation]);
 
   const canContinue = !submittingSession;
 
@@ -163,9 +176,48 @@ export default function EndScreen({
         {sessionSubmission?.submitted ? (
           <>
             <p className="feedback-screen__calibration">Session submitted successfully.</p>
+
+            <div className="end-screen__api-grid">
+              <div className="end-screen__api-item">
+                <span className="end-screen__api-key">student_id</span>
+                <span className="end-screen__api-value">{recommendation?.student_id || '-'}</span>
+              </div>
+              <div className="end-screen__api-item">
+                <span className="end-screen__api-key">chapter_id</span>
+                <span className="end-screen__api-value">{recommendation?.chapter_id || '-'}</span>
+              </div>
+              <div className="end-screen__api-item">
+                <span className="end-screen__api-key">performance_score</span>
+                <span className="end-screen__api-value">{recommendation?.performance_score ?? '-'}</span>
+              </div>
+              <div className="end-screen__api-item">
+                <span className="end-screen__api-key">confidence_score</span>
+                <span className="end-screen__api-value">{recommendation?.confidence_score ?? '-'}</span>
+              </div>
+            </div>
+
             {learningState ? <p><strong>Learning state:</strong> {learningState}</p> : null}
             {recommendationType ? <p><strong>Recommendation type:</strong> {recommendationType}</p> : null}
             {recommendationReason ? <p><strong>Reason:</strong> {recommendationReason}</p> : null}
+
+            {(Object.keys(diagnosis).length > 0) && (
+              <div className="end-screen__api-diagnosis">
+                <h4>Diagnosis</h4>
+                <p><strong>accuracy:</strong> {diagnosis?.accuracy ?? '-'}</p>
+                <p><strong>hint_dependency:</strong> {diagnosis?.hint_dependency || '-'}</p>
+                <p><strong>retry_behavior:</strong> {diagnosis?.retry_behavior || '-'}</p>
+                <p><strong>time_efficiency:</strong> {diagnosis?.time_efficiency || '-'}</p>
+                {(Object.keys(diagnosisHistory).length > 0) && (
+                  <p>
+                    <strong>history:</strong>{' '}
+                    past_attempts={diagnosisHistory?.past_attempts ?? '-'},
+                    {' '}avg_performance={diagnosisHistory?.avg_performance ?? '-'},
+                    {' '}trend={diagnosisHistory?.trend || '-'}
+                  </p>
+                )}
+              </div>
+            )}
+
             {nextSteps.length > 0 ? (
               <ul>
                 {nextSteps.map((step, idx) => (
@@ -179,6 +231,13 @@ export default function EndScreen({
               <p>
                 <a href={prerequisiteUrl} target="_blank" rel="noreferrer">Open prerequisite resource</a>
               </p>
+            ) : null}
+
+            {recommendationResponseText ? (
+              <div className="end-screen__api-response-wrap">
+                <h4 className="end-screen__api-response-title">Recommendation API Response</h4>
+                <pre className="end-screen__api-response-pre">{recommendationResponseText}</pre>
+              </div>
             ) : null}
           </>
         ) : chapterCompleted ? (

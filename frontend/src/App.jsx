@@ -7,6 +7,7 @@ import QuestionScreen from './components/QuestionScreen';
 import LessonScreen from './components/LessonScreen';
 import FeedbackPanel from './components/FeedbackPanel';
 import EndScreen from './components/EndScreen';
+import CheckpointScreen from './components/CheckpointScreen';
 import MasteryPopup from './components/MasteryPopup';
 import Sidebar from './components/layout/Sidebar';
 import Header from './components/layout/Header';
@@ -26,8 +27,8 @@ import {
   updateSessionProgress,
 } from './services/api';
 
-const SESSION_TARGET_QUESTIONS = 10;
-const CHAPTER_ID = import.meta.env.VITE_CHAPTER_ID || 'grade8_linear_equations_in_one_variable';
+const DEFAULT_SESSION_TARGET_QUESTIONS = 10;
+const CHAPTER_ID = import.meta.env.VITE_CHAPTER_ID || 'grade8_linear_eq';
 const FINAL_CHAPTER_CONCEPT_ID = (import.meta.env.VITE_FINAL_CHAPTER_CONCEPT_ID || '').trim();
 const SESSION_STORAGE = {
   token: 'token',
@@ -191,9 +192,11 @@ function App() {
   const [pendingRetryAttempts, setPendingRetryAttempts] = useState(1);
   const [attemptsInSession, setAttemptsInSession] = useState(0);
   const [hintsUsedSession, setHintsUsedSession] = useState(0);
+  const [sessionTargetQuestions, setSessionTargetQuestions] = useState(DEFAULT_SESSION_TARGET_QUESTIONS);
   const [sessionStartTime] = useState(Date.now());
   const [xpToast, setXpToast] = useState({ visible: false, amount: 0, key: 0 });
   const [masteryPopup, setMasteryPopup] = useState({ show: false, concept: '' });
+  const [topicCheckpoint, setTopicCheckpoint] = useState(null);
   const [diagnosticQuestions, setDiagnosticQuestions] = useState(null);
   const [diagnosticResult, setDiagnosticResult] = useState(null);
   const [diagnosticCompleted, setDiagnosticCompleted] = useState(false);
@@ -229,7 +232,9 @@ function App() {
     setScreen('map');
     setRetryEnabled(false);
     setPendingRetryAttempts(1);
+    setSessionTargetQuestions(DEFAULT_SESSION_TARGET_QUESTIONS);
     setActiveMissionConcept('');
+    setTopicCheckpoint(null);
     setSessionSubmission(null);
     setChapterCompleted(false);
     setSessionMetricsLocked(false);
@@ -251,6 +256,10 @@ function App() {
     if (data?.student_id) {
       setUserName(data.student_id);
     }
+    const fullChapterTotal = Number(
+      data?.session_metrics?.total_questions || DEFAULT_SESSION_TARGET_QUESTIONS
+    );
+    setSessionTargetQuestions(fullChapterTotal > 0 ? fullChapterTotal : DEFAULT_SESSION_TARGET_QUESTIONS);
     setProgress(data);
     return data;
   }
@@ -298,7 +307,6 @@ function App() {
           student_id: sessionContext.student_id,
           session_id: sessionContext.session_id,
           chapter_id: sessionContext.chapter_id || CHAPTER_ID,
-          total_questions: SESSION_TARGET_QUESTIONS,
         });
 
         exitSubmissionSentRef.current = false;
@@ -376,7 +384,9 @@ function App() {
         const conceptMapData = await loadConceptMap();
         const existingMetrics = progressData?.session_metrics || {};
         const existingAttempted = Number(existingMetrics.questions_attempted || 0);
-        const existingTotal = Number(existingMetrics.total_questions || SESSION_TARGET_QUESTIONS);
+        const existingTotal = Number(
+          existingMetrics.total_questions || sessionTargetQuestions || DEFAULT_SESSION_TARGET_QUESTIONS
+        );
         setSessionMetricsLocked(existingTotal > 0 && existingAttempted >= existingTotal);
         setChapterCompleted(isChapterCompleted(progressData, conceptMapData));
         setActiveMissionConcept(resolveMissionConcept(progressData, conceptMapData));
@@ -602,11 +612,8 @@ function App() {
             correct_answers: result.correctness ? 1 : 0,
             wrong_answers: result.correctness ? 0 : 1,
             questions_attempted: 1,
-            retry_count: Number(payload.attempts || 1) > 1 ? 1 : 0,
+            retry_count: Math.max(0, Number(payload.attempts || 1) - 1),
             hints_used: Number(payload.used_hints || 0),
-            total_hints_embedded: Array.isArray(questionPayload?.question?.hints)
-              ? questionPayload.question.hints.length
-              : 0,
             time_spent_seconds: Number(payload.time_taken || 0),
           },
           status: 'in_progress',
@@ -651,17 +658,22 @@ function App() {
       if (chapterDoneNow) {
         // Freeze metrics only when full chapter completion is reached.
         setSessionMetricsLocked(true);
+        setTopicCheckpoint(null);
         await loadSummary();
         setScreen('end');
         return;
       }
 
-      if (nextCount >= SESSION_TARGET_QUESTIONS) {
-        // Intermediate checkpoint only; final submission remains disabled until chapter completion.
-        setSessionMetricsLocked(true);
-        setAttemptsInSession(0);
-        setError('Checkpoint reached. Continue learning to complete the full chapter before final submission.');
-        setScreen('map');
+      if (justMastered) {
+        const masteredNode = (updatedConceptMap?.nodes || []).find((node) => node.id === justMastered);
+        setTopicCheckpoint({
+          conceptId: justMastered,
+          conceptLabel: masteredNode?.label || justMastered.replace(/_/g, ' '),
+          completedCount,
+          totalCount: nodeCount,
+          nodes: updatedConceptMap?.nodes || [],
+        });
+        setScreen('checkpoint');
         return;
       }
 
@@ -719,6 +731,7 @@ function App() {
     setSummary(null);
     setFeedback(null);
     setActiveMissionConcept('');
+    setTopicCheckpoint(null);
     setSessionSubmission(null);
     autoCompletedSubmitAttemptedRef.current = false;
     setSessionMetricsLocked(true);
@@ -729,6 +742,20 @@ function App() {
     const conceptMapData = await loadConceptMap();
     setChapterCompleted(isChapterCompleted(progressData, conceptMapData));
     setActiveMissionConcept(resolveMissionConcept(progressData, conceptMapData));
+  }
+
+  async function continueAfterCheckpoint() {
+    try {
+      setLoading(true);
+      setError('');
+      setTopicCheckpoint(null);
+      await loadNextQuestion(activeMissionConcept || undefined);
+      setScreen('question');
+    } catch (err) {
+      setError(err.message);
+    } finally {
+      setLoading(false);
+    }
   }
 
   async function handleSubmitSession(finalStatus = 'completed') {
@@ -844,7 +871,7 @@ function App() {
           progress={progress}
           conceptMap={conceptMap}
           attemptsInSession={attemptsInSession}
-          sessionTarget={SESSION_TARGET_QUESTIONS}
+          sessionTarget={sessionTargetQuestions}
           screen={screen}
           questionPayload={questionPayload}
           activeMissionConcept={activeMissionConcept}
@@ -926,10 +953,18 @@ function App() {
                retryEnabled={retryEnabled}
                pendingRetryAttempts={pendingRetryAttempts}
                attemptsInSession={attemptsInSession}
-               sessionTarget={SESSION_TARGET_QUESTIONS}
+               sessionTarget={sessionTargetQuestions}
                onContinue={continueAfterFeedback}
                onRetry={continueAfterFeedback}
                onSkip={skipFromNeedReview}
+               loading={loading}
+             />
+           )}
+
+           {screen === 'checkpoint' && (
+             <CheckpointScreen
+               checkpoint={topicCheckpoint}
+               onContinue={continueAfterCheckpoint}
                loading={loading}
              />
            )}

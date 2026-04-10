@@ -13,7 +13,74 @@ const {
 const { getPendingLesson, markLessonAsComplete } = require('../services/lessonService');
 const { getRequiredSessionIdentity, resolveChapterId } = require('../utils/sessionContext');
 
-const DEFAULT_CHAPTER_ID = (process.env.CHAPTER_ID || 'grade8_linear_equations_in_one_variable').trim();
+const DEFAULT_CHAPTER_ID = (process.env.CHAPTER_ID || 'grade8_linear_eq').trim();
+const CHAPTER_CONCEPT_IDS = CONCEPT_GRAPH.map((concept) => concept.id);
+
+function getChapterQuestionFilter() {
+  if (CHAPTER_CONCEPT_IDS.length === 0) {
+    return {};
+  }
+  return {
+    concept: { $in: CHAPTER_CONCEPT_IDS },
+  };
+}
+
+function toSafeNumber(value, fallback = 0) {
+  const num = Number(value);
+  return Number.isFinite(num) ? num : fallback;
+}
+
+function toNonNegativeInteger(value, fallback = 0) {
+  return Math.max(0, Math.floor(toSafeNumber(value, fallback)));
+}
+
+async function resolveChapterMetricTotals(questionFallback = 10, hintsFallback = 0) {
+  let totalQuestions = Math.max(1, toNonNegativeInteger(questionFallback, 10));
+  let totalHintsEmbedded = Math.max(0, toNonNegativeInteger(hintsFallback, 0));
+  const chapterQuestionFilter = getChapterQuestionFilter();
+
+  try {
+    const [questionCount, hintTotals] = await Promise.all([
+      Question.countDocuments(chapterQuestionFilter),
+      Question.aggregate([
+        {
+          $match: chapterQuestionFilter,
+        },
+        {
+          $project: {
+            hint_count: {
+              $size: { $ifNull: ['$hints', []] },
+            },
+          },
+        },
+        {
+          $group: {
+            _id: null,
+            total_hints: { $sum: '$hint_count' },
+          },
+        },
+      ]),
+    ]);
+
+    if (questionCount > 0) {
+      totalQuestions = questionCount;
+    }
+
+    if (Array.isArray(hintTotals) && hintTotals.length > 0) {
+      totalHintsEmbedded = Math.max(
+        0,
+        toNonNegativeInteger(hintTotals[0].total_hints, totalHintsEmbedded)
+      );
+    }
+  } catch (_error) {
+    // Ignore metric lookup errors and keep safe defaults.
+  }
+
+  return {
+    totalQuestions,
+    totalHintsEmbedded,
+  };
+}
 
 function ensureUserModelShape(user) {
   if (!user.progress.concept_levels) {
@@ -119,6 +186,7 @@ async function getOrCreateSession(req, fallbackName = 'Learner') {
   const requestedChapterId = resolveChapterId(req);
   const chapterId = (requestedChapterId || DEFAULT_CHAPTER_ID || '').trim();
   const requestedName = String(req.body?.user_name || req.query?.user_name || '').trim();
+  const { totalQuestions, totalHintsEmbedded } = await resolveChapterMetricTotals(10, 0);
 
   let user = await Session.findOne({
     student_id: studentId,
@@ -131,13 +199,17 @@ async function getOrCreateSession(req, fallbackName = 'Learner') {
       session_id: sessionId,
       chapter_id: chapterId,
       name: requestedName || studentId || fallbackName,
-      total_questions: 10,
+      total_questions: totalQuestions,
+      total_hints_embedded: totalHintsEmbedded,
     });
   }
 
   if (chapterId && !user.chapter_id) {
     user.chapter_id = chapterId;
   }
+
+  user.total_questions = totalQuestions;
+  user.total_hints_embedded = totalHintsEmbedded;
 
   if (!user.name) {
     user.name = requestedName || studentId || fallbackName;
