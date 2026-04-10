@@ -173,6 +173,7 @@ function App() {
   const [teachingContext, setTeachingContext] = useState(null);
   const [activeMissionConcept, setActiveMissionConcept] = useState('');
   const [sessionSubmission, setSessionSubmission] = useState(null);
+  const [sessionMetricsLocked, setSessionMetricsLocked] = useState(false);
   const [submittingSession, setSubmittingSession] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
@@ -199,6 +200,7 @@ function App() {
     setPendingRetryAttempts(1);
     setActiveMissionConcept('');
     setSessionSubmission(null);
+    setSessionMetricsLocked(false);
     exitSubmissionSentRef.current = false;
     autoCompletedSubmitAttemptedRef.current = false;
     setError('Session cleared. Reopen with /chapter?token=<jwt>&student_id=<id>&session_id=<id>');
@@ -269,6 +271,7 @@ function App() {
 
         exitSubmissionSentRef.current = false;
         autoCompletedSubmitAttemptedRef.current = false;
+        setSessionMetricsLocked(false);
 
         const storedSubmission = readFailedSubmission(sessionContext.session_id);
         if (storedSubmission && !retryingStoredSubmissionRef.current) {
@@ -284,6 +287,9 @@ function App() {
                 recommendation: retryError.payload.recommendation,
               });
               clearFailedSubmission(sessionContext.session_id);
+            } else if (retryError?.status === 400 && Array.isArray(retryError?.payload?.errors)) {
+              // Validation failures won't be fixed by replaying the same payload snapshot.
+              clearFailedSubmission(sessionContext.session_id);
             }
           } finally {
             retryingStoredSubmissionRef.current = false;
@@ -292,6 +298,10 @@ function App() {
 
         const progressData = await loadProgress();
         const conceptMapData = await loadConceptMap();
+        const existingMetrics = progressData?.session_metrics || {};
+        const existingAttempted = Number(existingMetrics.questions_attempted || 0);
+        const existingTotal = Number(existingMetrics.total_questions || SESSION_TARGET_QUESTIONS);
+        setSessionMetricsLocked(existingTotal > 0 && existingAttempted >= existingTotal);
         setActiveMissionConcept(resolveMissionConcept(progressData, conceptMapData));
 
         try {
@@ -523,20 +533,22 @@ function App() {
         return;
       }
 
-      await updateSessionProgress({
-        increments: {
-          correct_answers: result.correctness ? 1 : 0,
-          wrong_answers: result.correctness ? 0 : 1,
-          questions_attempted: 1,
-          retry_count: Number(payload.attempts || 1) > 1 ? 1 : 0,
-          hints_used: Number(payload.used_hints || 0),
-          total_hints_embedded: Array.isArray(questionPayload?.question?.hints)
-            ? questionPayload.question.hints.length
-            : 0,
-          time_spent_seconds: Number(payload.time_taken || 0),
-        },
-        status: 'in_progress',
-      });
+      if (!sessionMetricsLocked) {
+        await updateSessionProgress({
+          increments: {
+            correct_answers: result.correctness ? 1 : 0,
+            wrong_answers: result.correctness ? 0 : 1,
+            questions_attempted: 1,
+            retry_count: Number(payload.attempts || 1) > 1 ? 1 : 0,
+            hints_used: Number(payload.used_hints || 0),
+            total_hints_embedded: Array.isArray(questionPayload?.question?.hints)
+              ? questionPayload.question.hints.length
+              : 0,
+            time_spent_seconds: Number(payload.time_taken || 0),
+          },
+          status: 'in_progress',
+        });
+      }
 
       if ((result.xp_earned || 0) > 0) {
         setXpToast({ visible: true, amount: result.xp_earned, key: Date.now() });
@@ -571,6 +583,7 @@ function App() {
       setAttemptsInSession(nextCount);
 
       if (nextCount >= SESSION_TARGET_QUESTIONS) {
+        setSessionMetricsLocked(true);
         await loadSummary();
         setScreen('end');
       } else {
@@ -631,6 +644,7 @@ function App() {
     setActiveMissionConcept('');
     setSessionSubmission(null);
     autoCompletedSubmitAttemptedRef.current = false;
+    setSessionMetricsLocked(true);
     setError('');
     setScreen('map');
 
@@ -664,6 +678,14 @@ function App() {
           recommendation: err.payload.recommendation,
         });
         clearFailedSubmission(sessionContext.session_id);
+        return;
+      }
+
+      const validationErrors = Array.isArray(err?.payload?.errors) ? err.payload.errors : [];
+      if (validationErrors.length > 0) {
+        // Validation errors need metrics changes, not replaying the same failed snapshot.
+        clearFailedSubmission(sessionContext.session_id);
+        setError(`${err.message}: ${validationErrors.join('; ')}`);
         return;
       }
 
