@@ -6,7 +6,11 @@ const {
 } = require('../utils/sessionContext');
 
 const EXTERNAL_RECOMMENDATION_URL = 'https://kaushik-dev.online/api/recommend/';
-const CHAPTER_ID = (process.env.CHAPTER_ID || 'grade8-linear-equations-one-variable').trim();
+const CHAPTER_ID = (process.env.CHAPTER_ID || 'grade8_linear_eq').trim();
+const CHAPTER_ID_ALIASES = String(process.env.CHAPTER_ID_ALIASES || '')
+  .split(',')
+  .map((item) => item.trim())
+  .filter(Boolean);
 
 const TRACKED_NUMERIC_FIELDS = [
   'correct_answers',
@@ -37,6 +41,84 @@ function toNonNegativeInteger(value, fallback = 0) {
 
 function clampRatio(value) {
   return Math.max(0, Math.min(1, toSafeNumber(value, 0)));
+}
+
+function toText(value) {
+  if (value === undefined || value === null) return '';
+  return String(value).trim();
+}
+
+function parseGradePrefix(chapterId) {
+  const text = toText(chapterId).toLowerCase();
+  const match = text.match(/grade\d+/);
+  return match ? match[0] : '';
+}
+
+function buildChapterIdCandidates(primaryChapterId) {
+  const candidates = new Set();
+  const push = (value) => {
+    const text = toText(value);
+    if (text) candidates.add(text);
+  };
+
+  const primary = toText(primaryChapterId);
+  push(primary);
+
+  if (primary.includes('_')) {
+    push(primary.replace(/_/g, '-'));
+  }
+  if (primary.includes('-')) {
+    push(primary.replace(/-/g, '_'));
+  }
+
+  const gradePrefix = parseGradePrefix(primary) || parseGradePrefix(CHAPTER_ID) || 'grade8';
+  push(`${gradePrefix}_linear_eq`);
+  push(`${gradePrefix}-linear-eq`);
+  push(`${gradePrefix}_linear_equations_one_variable`);
+  push(`${gradePrefix}-linear-equations-one-variable`);
+
+  CHAPTER_ID_ALIASES.forEach((alias) => push(alias));
+
+  return [...candidates];
+}
+
+function collectErrorMessages(responseBody) {
+  const messages = [];
+
+  if (typeof responseBody === 'string' && responseBody.trim()) {
+    messages.push(responseBody.trim());
+  }
+
+  if (responseBody && typeof responseBody.message === 'string' && responseBody.message.trim()) {
+    messages.push(responseBody.message.trim());
+  }
+
+  if (responseBody && Array.isArray(responseBody.errors)) {
+    responseBody.errors.forEach((item) => {
+      const text = toText(item);
+      if (text) messages.push(text);
+    });
+  }
+
+  if (responseBody && typeof responseBody.raw === 'string' && responseBody.raw.trim()) {
+    messages.push(responseBody.raw.trim());
+  }
+
+  return messages;
+}
+
+function isChapterMetadataError(error) {
+  if (!error || error.status !== 400) return false;
+
+  const text = collectErrorMessages(error.responseBody)
+    .join(' ')
+    .toLowerCase();
+
+  return (
+    text.includes('chapter_id')
+    && text.includes('not found')
+    && text.includes('metadata')
+  );
 }
 
 function delay(ms) {
@@ -331,20 +413,54 @@ async function submitSession(req, res) {
     await session.save();
 
     try {
-      const recommendationResponse = await postWithRetry(
-        EXTERNAL_RECOMMENDATION_URL,
-        {
-          method: 'POST',
-          headers: {
-            Authorization: `Bearer ${token}`,
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify(payload),
-        },
-        2
-      );
+      const chapterIdCandidates = buildChapterIdCandidates(payload.chapter_id);
+      let recommendationResponse = null;
+      let resolvedChapterId = payload.chapter_id;
+      let chapterRetryError = null;
+
+      for (const candidateChapterId of chapterIdCandidates) {
+        const candidatePayload = {
+          ...payload,
+          chapter_id: candidateChapterId,
+        };
+
+        try {
+          recommendationResponse = await postWithRetry(
+            EXTERNAL_RECOMMENDATION_URL,
+            {
+              method: 'POST',
+              headers: {
+                Authorization: `Bearer ${token}`,
+                'Content-Type': 'application/json',
+              },
+              body: JSON.stringify(candidatePayload),
+            },
+            2
+          );
+
+          resolvedChapterId = candidateChapterId;
+          payload.chapter_id = candidateChapterId;
+          break;
+        } catch (error) {
+          chapterRetryError = error;
+
+          if (!isChapterMetadataError(error)) {
+            throw error;
+          }
+        }
+      }
+
+      if (!recommendationResponse) {
+        if (chapterRetryError) {
+          chapterRetryError.attemptedChapterIds = chapterIdCandidates;
+          throw chapterRetryError;
+        }
+
+        throw new Error('Recommendation API call failed');
+      }
 
       session.status = 'submitted';
+      session.chapter_id = resolvedChapterId;
       session.submitted_at = new Date();
       session.submitted_response = recommendationResponse;
       session.failed_submission = null;
@@ -352,6 +468,7 @@ async function submitSession(req, res) {
 
       return res.json({
         submitted: true,
+        chapter_id: resolvedChapterId,
         recommendation: recommendationResponse,
       });
     } catch (error) {
@@ -362,6 +479,7 @@ async function submitSession(req, res) {
         error_message: error.message,
         error_status: error.status || null,
         error_response: error.responseBody || null,
+        attempted_chapter_ids: error.attemptedChapterIds || [payload.chapter_id],
         updated_at: new Date().toISOString(),
       };
       await session.save();
@@ -372,6 +490,7 @@ async function submitSession(req, res) {
       console.error('Recommendation submit failed', {
         student_id: session.student_id,
         session_id: session.session_id,
+        attempted_chapter_ids: error.attemptedChapterIds || [payload.chapter_id],
         upstream_status: upstreamStatus,
         upstream_response: error.responseBody || null,
         error_message: error.message,
@@ -387,6 +506,7 @@ async function submitSession(req, res) {
       return res.status(responseStatus).json({
         submitted: false,
         message,
+        attempted_chapter_ids: error.attemptedChapterIds || [payload.chapter_id],
         upstream_status: upstreamStatus,
         upstream_response: error.responseBody || null,
         error: error.message,

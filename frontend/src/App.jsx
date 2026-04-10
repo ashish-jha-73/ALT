@@ -27,7 +27,7 @@ import {
 } from './services/api';
 
 const SESSION_TARGET_QUESTIONS = 10;
-const CHAPTER_ID = import.meta.env.VITE_CHAPTER_ID || 'grade8-linear-equations-one-variable';
+const CHAPTER_ID = import.meta.env.VITE_CHAPTER_ID || 'grade8_linear_eq';
 const SESSION_STORAGE = {
   token: 'token',
   studentId: 'student_id',
@@ -707,8 +707,14 @@ function App() {
       }
       const upstreamStatus = err?.payload?.upstream_status;
       const upstreamDetails = stringifyUpstreamError(err?.payload?.upstream_response);
+      const attemptedChapterIds = Array.isArray(err?.payload?.attempted_chapter_ids)
+        ? err.payload.attempted_chapter_ids.filter(Boolean)
+        : [];
       const statusSuffix = upstreamStatus ? ` (upstream ${upstreamStatus})` : '';
       const detailSuffix = upstreamDetails ? `: ${upstreamDetails}` : '';
+      const attemptedSuffix = attemptedChapterIds.length > 0
+        ? ` Attempted chapter_id values: ${attemptedChapterIds.join(', ')}`
+        : '';
 
       const chapterIdMissing =
         upstreamStatus === 400
@@ -718,14 +724,14 @@ function App() {
 
       if (chapterIdMissing) {
         clearFailedSubmission(sessionContext.session_id);
-        setError(`${err.message}${statusSuffix}${detailSuffix}`);
+        setError(`${err.message}${statusSuffix}${detailSuffix}.${attemptedSuffix}`);
         return;
       }
 
       persistFailedSubmission(sessionContext.session_id, payload);
 
       setError(
-        `${err.message}${statusSuffix}${detailSuffix}. Submission payload saved locally and will retry automatically.`
+        `${err.message}${statusSuffix}${detailSuffix}.${attemptedSuffix} Submission payload saved locally and will retry automatically.`
       );
     } finally {
       setSubmittingSession(false);

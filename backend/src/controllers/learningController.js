@@ -13,7 +13,7 @@ const {
 const { getPendingLesson, markLessonAsComplete } = require('../services/lessonService');
 const { getRequiredSessionIdentity, resolveChapterId } = require('../utils/sessionContext');
 
-const DEFAULT_CHAPTER_ID = (process.env.CHAPTER_ID || 'grade8-linear-equations-one-variable').trim();
+const DEFAULT_CHAPTER_ID = (process.env.CHAPTER_ID || 'grade8_linear_eq').trim();
 
 function ensureUserModelShape(user) {
   if (!user.progress.concept_levels) {

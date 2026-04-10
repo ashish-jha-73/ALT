@@ -189,7 +189,7 @@ const sessionSchema = new mongoose.Schema(
     },
     chapter_id: {
       type: String,
-      default: process.env.CHAPTER_ID || 'grade8-linear-equations-one-variable',
+      default: process.env.CHAPTER_ID || 'grade8_linear_eq',
       trim: true,
     },
     name: {
