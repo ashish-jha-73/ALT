@@ -3,12 +3,14 @@ const requestContext = {
   token: '',
   studentId: '',
   sessionId: '',
+  chapterId: '',
 };
 
-export function setSessionContext({ token, student_id, session_id } = {}) {
+export function setSessionContext({ token, student_id, session_id, chapter_id } = {}) {
   requestContext.token = token || '';
   requestContext.studentId = student_id || '';
   requestContext.sessionId = session_id || '';
+  requestContext.chapterId = chapter_id || '';
 }
 
 async function request(path, options = {}) {
@@ -23,6 +25,9 @@ async function request(path, options = {}) {
         : {}),
       ...(requestContext.sessionId
         ? { 'x-session-id': requestContext.sessionId }
+        : {}),
+      ...(requestContext.chapterId
+        ? { 'x-chapter-id': requestContext.chapterId }
         : {}),
       ...(options.headers || {}),
     },

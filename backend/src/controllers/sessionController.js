@@ -1,8 +1,12 @@
 const Session = require('../models/Session');
-const { getBearerToken, getRequiredSessionIdentity } = require('../utils/sessionContext');
+const {
+  getBearerToken,
+  getRequiredSessionIdentity,
+  resolveChapterId,
+} = require('../utils/sessionContext');
 
 const EXTERNAL_RECOMMENDATION_URL = 'https://kaushik-dev.online/api/recommend/';
-const CHAPTER_ID = (process.env.CHAPTER_ID || 'grade8_linear_eq').trim();
+const CHAPTER_ID = (process.env.CHAPTER_ID || 'grade8-linear-equations-one-variable').trim();
 
 const TRACKED_NUMERIC_FIELDS = [
   'correct_answers',
@@ -94,7 +98,7 @@ function buildSubmissionPayload(session, sessionStatus) {
   return {
     student_id: session.student_id,
     session_id: session.session_id,
-    chapter_id: CHAPTER_ID,
+    chapter_id: (session.chapter_id || CHAPTER_ID || '').trim(),
     timestamp: new Date().toISOString(),
     session_status: sessionStatus,
     correct_answers: toNonNegativeInteger(session.correct_answers),
@@ -142,6 +146,8 @@ function validateSubmissionPayload(payload) {
 async function getOrCreateSession(req) {
   const body = req.body || {};
   const { studentId, sessionId } = getRequiredSessionIdentity(req);
+  const requestedChapterId = resolveChapterId(req);
+  const chapterId = (requestedChapterId || CHAPTER_ID || '').trim();
   const totalQuestions = Math.max(1, toNonNegativeInteger(body.total_questions, 10));
 
   let session = await Session.findOne({
@@ -153,7 +159,7 @@ async function getOrCreateSession(req) {
     session = await Session.create({
       student_id: studentId,
       session_id: sessionId,
-      chapter_id: CHAPTER_ID,
+      chapter_id: chapterId,
       name: studentId,
       total_questions: totalQuestions || 10,
       status: 'in_progress',
@@ -161,7 +167,9 @@ async function getOrCreateSession(req) {
     return session;
   }
 
-  session.chapter_id = CHAPTER_ID;
+  if (chapterId) {
+    session.chapter_id = chapterId;
+  }
   if (body.total_questions !== undefined) {
     session.total_questions = totalQuestions;
   }

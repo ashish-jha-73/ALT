@@ -27,11 +27,12 @@ import {
 } from './services/api';
 
 const SESSION_TARGET_QUESTIONS = 10;
-const CHAPTER_ID = import.meta.env.VITE_CHAPTER_ID || 'grade8_linear_eq';
+const CHAPTER_ID = import.meta.env.VITE_CHAPTER_ID || 'grade8-linear-equations-one-variable';
 const SESSION_STORAGE = {
   token: 'token',
   studentId: 'student_id',
   sessionId: 'session_id',
+  chapterId: 'chapter_id',
 };
 const FAILED_SUBMISSION_PREFIX = 'failed_session_submission:';
 
@@ -77,6 +78,7 @@ function readSessionContextFromUrl() {
   const tokenFromUrl = params.get('token');
   const studentIdFromUrl = params.get('student_id');
   const sessionIdFromUrl = params.get('session_id');
+  const chapterIdFromUrl = params.get('chapter_id');
 
   if (tokenFromUrl) {
     sessionStorage.setItem(SESSION_STORAGE.token, tokenFromUrl);
@@ -87,11 +89,15 @@ function readSessionContextFromUrl() {
   if (sessionIdFromUrl) {
     sessionStorage.setItem(SESSION_STORAGE.sessionId, sessionIdFromUrl);
   }
+  if (chapterIdFromUrl) {
+    sessionStorage.setItem(SESSION_STORAGE.chapterId, chapterIdFromUrl);
+  }
 
   return {
     token: sessionStorage.getItem(SESSION_STORAGE.token) || '',
     student_id: sessionStorage.getItem(SESSION_STORAGE.studentId) || '',
     session_id: sessionStorage.getItem(SESSION_STORAGE.sessionId) || '',
+    chapter_id: sessionStorage.getItem(SESSION_STORAGE.chapterId) || CHAPTER_ID,
   };
 }
 
@@ -99,6 +105,7 @@ function clearStoredSessionContext() {
   sessionStorage.removeItem(SESSION_STORAGE.token);
   sessionStorage.removeItem(SESSION_STORAGE.studentId);
   sessionStorage.removeItem(SESSION_STORAGE.sessionId);
+  sessionStorage.removeItem(SESSION_STORAGE.chapterId);
 }
 
 function hasValidSessionContext(sessionContext) {
@@ -187,7 +194,7 @@ function App() {
     }
 
     clearStoredSessionContext();
-    setApiSessionContext({ token: '', student_id: '', session_id: '' });
+    setApiSessionContext({ token: '', student_id: '', session_id: '', chapter_id: '' });
     setSessionContextState(null);
     setUserName('');
     setProgress(null);
@@ -265,7 +272,7 @@ function App() {
         await startSession({
           student_id: sessionContext.student_id,
           session_id: sessionContext.session_id,
-          chapter_id: CHAPTER_ID,
+          chapter_id: sessionContext.chapter_id || CHAPTER_ID,
           total_questions: SESSION_TARGET_QUESTIONS,
         });
 
@@ -277,7 +284,15 @@ function App() {
         if (storedSubmission && !retryingStoredSubmissionRef.current) {
           retryingStoredSubmissionRef.current = true;
           try {
-            const retryResponse = await submitSession(storedSubmission);
+            const normalizedStoredSubmission = {
+              ...storedSubmission,
+              student_id: sessionContext.student_id,
+              session_id: sessionContext.session_id,
+              chapter_id: sessionContext.chapter_id || CHAPTER_ID,
+              token: sessionContext.token,
+            };
+
+            const retryResponse = await submitSession(normalizedStoredSubmission);
             setSessionSubmission(retryResponse);
             clearFailedSubmission(sessionContext.session_id);
           } catch (retryError) {
@@ -337,6 +352,7 @@ function App() {
       return {
         student_id: sessionContext.student_id,
         session_id: sessionContext.session_id,
+        chapter_id: sessionContext.chapter_id || CHAPTER_ID,
         token: sessionContext.token,
         session_status: resolvedStatus,
       };
@@ -659,6 +675,7 @@ function App() {
     const payload = {
       student_id: sessionContext.student_id,
       session_id: sessionContext.session_id,
+      chapter_id: sessionContext.chapter_id || CHAPTER_ID,
       token: sessionContext.token,
       session_status: finalStatus,
     };
@@ -688,12 +705,24 @@ function App() {
         setError(`${err.message}: ${validationErrors.join('; ')}`);
         return;
       }
-
-      persistFailedSubmission(sessionContext.session_id, payload);
       const upstreamStatus = err?.payload?.upstream_status;
       const upstreamDetails = stringifyUpstreamError(err?.payload?.upstream_response);
       const statusSuffix = upstreamStatus ? ` (upstream ${upstreamStatus})` : '';
       const detailSuffix = upstreamDetails ? `: ${upstreamDetails}` : '';
+
+      const chapterIdMissing =
+        upstreamStatus === 400
+        && typeof upstreamDetails === 'string'
+        && upstreamDetails.toLowerCase().includes('chapter_id')
+        && upstreamDetails.toLowerCase().includes('not found');
+
+      if (chapterIdMissing) {
+        clearFailedSubmission(sessionContext.session_id);
+        setError(`${err.message}${statusSuffix}${detailSuffix}`);
+        return;
+      }
+
+      persistFailedSubmission(sessionContext.session_id, payload);
 
       setError(
         `${err.message}${statusSuffix}${detailSuffix}. Submission payload saved locally and will retry automatically.`

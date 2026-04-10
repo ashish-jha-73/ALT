@@ -1,5 +1,7 @@
 const Session = require('../models/Session');
-const { getRequiredSessionIdentity } = require('../utils/sessionContext');
+const { getRequiredSessionIdentity, resolveChapterId } = require('../utils/sessionContext');
+
+const DEFAULT_CHAPTER_ID = (process.env.CHAPTER_ID || 'grade8-linear-equations-one-variable').trim();
 
 const DIAGNOSTIC_QUESTIONS = [
   // Novice (weight 1)
@@ -199,15 +201,20 @@ function classifyLevel(answers) {
 async function getDiagnosticQuestions(req, res) {
   try {
     const { studentId, sessionId } = getRequiredSessionIdentity(req);
+    const requestedChapterId = resolveChapterId(req);
+    const chapterId = (requestedChapterId || DEFAULT_CHAPTER_ID || '').trim();
     let user = await Session.findOne({ student_id: studentId, session_id: sessionId });
 
     if (!user) {
       user = await Session.create({
         student_id: studentId,
         session_id: sessionId,
-        chapter_id: 'grade8_linear_eq',
+        chapter_id: chapterId,
         name: studentId,
       });
+    } else if (chapterId && !user.chapter_id) {
+      user.chapter_id = chapterId;
+      await user.save();
     }
 
     if (user.progress.diagnostic_completed) {

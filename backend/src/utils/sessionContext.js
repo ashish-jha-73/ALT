@@ -34,6 +34,14 @@ function resolveSessionIdentity(req) {
   };
 }
 
+function resolveChapterId(req) {
+  return firstNonEmpty(
+    req.headers['x-chapter-id'],
+    req.body && req.body.chapter_id,
+    req.query && req.query.chapter_id
+  );
+}
+
 function getRequiredSessionIdentity(req) {
   const identity = resolveSessionIdentity(req);
   if (!identity.studentId || !identity.sessionId) {
@@ -45,5 +53,6 @@ function getRequiredSessionIdentity(req) {
 module.exports = {
   getBearerToken,
   resolveSessionIdentity,
+  resolveChapterId,
   getRequiredSessionIdentity,
 };

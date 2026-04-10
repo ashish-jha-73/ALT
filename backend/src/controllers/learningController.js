@@ -11,7 +11,9 @@ const {
   CONCEPT_UNLOCK_RULES,
 } = require('../utils/constants');
 const { getPendingLesson, markLessonAsComplete } = require('../services/lessonService');
-const { getRequiredSessionIdentity } = require('../utils/sessionContext');
+const { getRequiredSessionIdentity, resolveChapterId } = require('../utils/sessionContext');
+
+const DEFAULT_CHAPTER_ID = (process.env.CHAPTER_ID || 'grade8-linear-equations-one-variable').trim();
 
 function ensureUserModelShape(user) {
   if (!user.progress.concept_levels) {
@@ -114,6 +116,8 @@ function resolveMissionConceptForRequest(user, requestedConcept) {
 
 async function getOrCreateSession(req, fallbackName = 'Learner') {
   const { studentId, sessionId } = getRequiredSessionIdentity(req);
+  const requestedChapterId = resolveChapterId(req);
+  const chapterId = (requestedChapterId || DEFAULT_CHAPTER_ID || '').trim();
   const requestedName = String(req.body?.user_name || req.query?.user_name || '').trim();
 
   let user = await Session.findOne({
@@ -125,10 +129,14 @@ async function getOrCreateSession(req, fallbackName = 'Learner') {
     user = await Session.create({
       student_id: studentId,
       session_id: sessionId,
-      chapter_id: 'grade8_linear_eq',
+      chapter_id: chapterId,
       name: requestedName || studentId || fallbackName,
       total_questions: 10,
     });
+  }
+
+  if (chapterId && !user.chapter_id) {
+    user.chapter_id = chapterId;
   }
 
   if (!user.name) {
