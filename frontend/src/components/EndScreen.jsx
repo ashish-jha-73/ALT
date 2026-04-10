@@ -48,6 +48,8 @@ export default function EndScreen({
     return [];
   }, [recommendation, sessionSubmission]);
 
+  const canContinue = Boolean(sessionSubmission?.submitted);
+
   return (
     <div className="end-screen anim-fade-in">
       <div className="end-screen__hero">
@@ -191,12 +193,12 @@ export default function EndScreen({
           disabled={submittingSession}
           style={{ marginBottom: 10 }}
         >
-          {submittingSession ? 'Submitting Session...' : 'Submit Session'}
+          {submittingSession ? 'Submitting Session...' : 'Retry Session Submission'}
         </button>
       )}
 
-      <button type="button" className="btn-primary" onClick={onContinue}>
-        Continue Learning
+      <button type="button" className="btn-primary" onClick={onContinue} disabled={!canContinue}>
+        {canContinue ? 'Finish Session' : 'Finish Session (available after submission)'}
       </button>
     </div>
   );

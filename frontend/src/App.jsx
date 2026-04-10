@@ -164,6 +164,7 @@ function App() {
   const [error, setError] = useState('');
   const exitSubmissionSentRef = useRef(false);
   const retryingStoredSubmissionRef = useRef(false);
+  const autoCompletedSubmitAttemptedRef = useRef(false);
 
   function resetSessionContext() {
     if (sessionContext?.session_id) {
@@ -185,6 +186,7 @@ function App() {
     setActiveMissionConcept('');
     setSessionSubmission(null);
     exitSubmissionSentRef.current = false;
+    autoCompletedSubmitAttemptedRef.current = false;
     setError('Session cleared. Reopen with /chapter?token=<jwt>&student_id=<id>&session_id=<id>');
   }
 
@@ -252,6 +254,7 @@ function App() {
         });
 
         exitSubmissionSentRef.current = false;
+        autoCompletedSubmitAttemptedRef.current = false;
 
         const storedSubmission = readFailedSubmission(sessionContext.session_id);
         if (storedSubmission && !retryingStoredSubmissionRef.current) {
@@ -306,11 +309,12 @@ function App() {
     if (!sessionContext) return undefined;
 
     function buildExitPayload() {
+      const resolvedStatus = screen === 'end' ? 'completed' : 'exited_midway';
       return {
         student_id: sessionContext.student_id,
         session_id: sessionContext.session_id,
         token: sessionContext.token,
-        session_status: 'exited_midway',
+        session_status: resolvedStatus,
       };
     }
 
@@ -352,17 +356,19 @@ function App() {
     }
 
     function handleBeforeUnload(event) {
-      if (screen === 'end' || sessionSubmission?.submitted || submittingSession) {
+      if (sessionSubmission?.submitted || submittingSession) {
         return;
       }
 
-      event.preventDefault();
-      event.returnValue = '';
+      if (screen !== 'end') {
+        event.preventDefault();
+        event.returnValue = '';
+      }
       submitOnExit();
     }
 
     function handlePageHide() {
-      if (screen === 'end' || sessionSubmission?.submitted || submittingSession) {
+      if (sessionSubmission?.submitted || submittingSession) {
         return;
       }
 
@@ -376,6 +382,21 @@ function App() {
       window.removeEventListener('beforeunload', handleBeforeUnload);
       window.removeEventListener('pagehide', handlePageHide);
     };
+  }, [screen, sessionContext, sessionSubmission?.submitted, submittingSession]);
+
+  useEffect(() => {
+    if (
+      !sessionContext
+      || screen !== 'end'
+      || sessionSubmission?.submitted
+      || submittingSession
+      || autoCompletedSubmitAttemptedRef.current
+    ) {
+      return;
+    }
+
+    autoCompletedSubmitAttemptedRef.current = true;
+    handleSubmitSession('completed');
   }, [screen, sessionContext, sessionSubmission?.submitted, submittingSession]);
 
   async function handleDiagnosticSubmit(answers) {
@@ -583,18 +604,8 @@ function App() {
     });
   }
 
-  async function continueAfterEnd() {
-    setAttemptsInSession(0);
-    setHintsUsedSession(0);
-    setSummary(null);
-    setFeedback(null);
-    setActiveMissionConcept('');
-    setSessionSubmission(null);
-    setScreen('map');
-
-    const progressData = await loadProgress();
-    const conceptMapData = await loadConceptMap();
-    setActiveMissionConcept(resolveMissionConcept(progressData, conceptMapData));
+  function continueAfterEnd() {
+    resetSessionContext();
   }
 
   async function handleSubmitSession(finalStatus = 'completed') {
