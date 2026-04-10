@@ -2,7 +2,7 @@ const Session = require('../models/Session');
 const { getBearerToken, getRequiredSessionIdentity } = require('../utils/sessionContext');
 
 const EXTERNAL_RECOMMENDATION_URL = 'https://kaushik-dev.online/api/recommend/';
-const CHAPTER_ID = 'grade8_linear_eq';
+const CHAPTER_ID = (process.env.CHAPTER_ID || 'grade8_linear_eq').trim();
 
 const TRACKED_NUMERIC_FIELDS = [
   'correct_answers',

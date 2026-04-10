@@ -27,7 +27,7 @@ import {
 } from './services/api';
 
 const SESSION_TARGET_QUESTIONS = 10;
-const CHAPTER_ID = 'grade8_linear_eq';
+const CHAPTER_ID = import.meta.env.VITE_CHAPTER_ID || 'grade8_linear_eq';
 const SESSION_STORAGE = {
   token: 'token',
   studentId: 'student_id',
@@ -133,6 +133,20 @@ function clearFailedSubmission(sessionId) {
     window.localStorage.removeItem(failedSubmissionKey(sessionId));
   } catch (_error) {
     // ignore storage failures
+  }
+}
+
+function stringifyUpstreamError(upstreamResponse) {
+  if (!upstreamResponse) return '';
+  if (typeof upstreamResponse === 'string') return upstreamResponse;
+  if (typeof upstreamResponse.message === 'string' && upstreamResponse.message.trim()) {
+    return upstreamResponse.message.trim();
+  }
+
+  try {
+    return JSON.stringify(upstreamResponse);
+  } catch (_error) {
+    return '';
   }
 }
 
@@ -654,7 +668,14 @@ function App() {
       }
 
       persistFailedSubmission(sessionContext.session_id, payload);
-      setError(`${err.message}. Submission payload saved locally and will retry automatically.`);
+      const upstreamStatus = err?.payload?.upstream_status;
+      const upstreamDetails = stringifyUpstreamError(err?.payload?.upstream_response);
+      const statusSuffix = upstreamStatus ? ` (upstream ${upstreamStatus})` : '';
+      const detailSuffix = upstreamDetails ? `: ${upstreamDetails}` : '';
+
+      setError(
+        `${err.message}${statusSuffix}${detailSuffix}. Submission payload saved locally and will retry automatically.`
+      );
     } finally {
       setSubmittingSession(false);
     }
