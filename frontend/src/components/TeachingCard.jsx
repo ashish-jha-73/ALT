@@ -1,6 +1,6 @@
 import { useState } from 'react';
-import teachingContent from '../data/teachingContent';
-import videoLinks from '../data/videoLinks';
+import teachingContent from '../data/teachingContent.js';
+import videoLinks from '../data/videoLinks.js';
 
 function VisualBlock({ visual }) {
   if (!visual) return null;

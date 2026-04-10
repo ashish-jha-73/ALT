@@ -3,13 +3,6 @@
 node_modules/
 **/node_modules/
 
-# Build outputs
-
-dist/
-build/
-client/dist/
-client/build/
-
 # Logs
 
 logs/
@@ -45,13 +38,6 @@ Thumbs.db
 .pm2/
 dump.pm2
 
-# MongoDB local files (if running locally)
-
-data/
-*.wt
-*.ns
-*.lock
-
 # Coverage / testing
 
 coverage/
@@ -61,6 +47,3 @@ coverage/
 *.pem
 *.key
 
-# Optional: ignore your specific project root if needed
-
-grade8-linear-equations-one-variable/
