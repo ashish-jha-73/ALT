@@ -28,7 +28,7 @@ import {
 
 const SESSION_TARGET_QUESTIONS = 10;
 const CHAPTER_ID = import.meta.env.VITE_CHAPTER_ID || 'grade8_linear_equations_in_one_variable';
-const FINAL_CHAPTER_CONCEPT_ID = 'word_problems_advanced';
+const FINAL_CHAPTER_CONCEPT_ID = (import.meta.env.VITE_FINAL_CHAPTER_CONCEPT_ID || '').trim();
 const SESSION_STORAGE = {
   token: 'token',
   studentId: 'student_id',
@@ -78,11 +78,16 @@ function isChapterCompleted(progressData, conceptMapData) {
   if (nodes.length > 0) {
     const completedNodes = nodes.filter((node) => node.status === 'completed').length;
     const allConceptsCompleted = completedNodes === nodes.length;
-    const finalConceptCompleted = nodes.some(
-      (node) => node.id === FINAL_CHAPTER_CONCEPT_ID && node.status === 'completed'
-    );
+    if (!FINAL_CHAPTER_CONCEPT_ID) {
+      return allConceptsCompleted;
+    }
 
-    return allConceptsCompleted && finalConceptCompleted;
+    const finalConceptNode = nodes.find((node) => node.id === FINAL_CHAPTER_CONCEPT_ID);
+    if (!finalConceptNode) {
+      return allConceptsCompleted;
+    }
+
+    return allConceptsCompleted && finalConceptNode.status === 'completed';
   }
 
   return false;

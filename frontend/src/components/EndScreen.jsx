@@ -184,7 +184,7 @@ export default function EndScreen({
         ) : chapterCompleted ? (
           <p className="end-screen__empty">Chapter complete. Submit once to receive recommendation.next_steps.</p>
         ) : (
-          <p className="end-screen__empty">Checkpoint reached. Final submission unlocks only after Advanced Word Problems and full chapter mastery are complete.</p>
+          <p className="end-screen__empty">Checkpoint reached. Final submission unlocks only after full chapter mastery and the configured final chapter concept are complete.</p>
         )}
       </div>
 

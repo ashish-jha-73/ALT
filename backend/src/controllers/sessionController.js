@@ -4,6 +4,7 @@ const {
   getRequiredSessionIdentity,
   resolveChapterId,
 } = require('../utils/sessionContext');
+const { MASTERY_UNLOCK_THRESHOLD } = require('../utils/constants');
 
 const EXTERNAL_RECOMMENDATION_URL = 'https://kaushik-dev.online/api/recommend/';
 const CHAPTER_ID = (process.env.CHAPTER_ID || 'grade8_linear_equations_in_one_variable').trim();
@@ -11,7 +12,7 @@ const CHAPTER_ID_ALIASES = String(process.env.CHAPTER_ID_ALIASES || '')
   .split(',')
   .map((item) => item.trim())
   .filter(Boolean);
-const SHARE_RETRY_COUNT = String(process.env.SHARE_RETRY_COUNT || 'true').trim().toLowerCase() !== 'false';
+const SHARE_RETRY_COUNT = String(process.env.SHARE_RETRY_COUNT || 'false').trim().toLowerCase() === 'true';
 
 const TRACKED_NUMERIC_FIELDS = [
   'correct_answers',
@@ -31,6 +32,18 @@ const VALID_PROGRESS_STATUSES = new Set([
   'submission_failed',
 ]);
 
+const SUBTOPIC_GROUPS = [
+  { subtopic_id: 's1_variables', concepts: ['expressions_foundation'] },
+  { subtopic_id: 's2_equations', concepts: ['equation_basics'] },
+  { subtopic_id: 's3_solving', concepts: ['equation_solving'] },
+  { subtopic_id: 's4_transposition', concepts: ['multiplication_expressions'] },
+  {
+    subtopic_id: 's5_word_problems',
+    concepts: ['word_problems_basic', 'word_problems_advanced'],
+  },
+  { subtopic_id: 's6_advanced', concepts: ['advanced_equations'] },
+];
+
 function toSafeNumber(value, fallback = 0) {
   const num = Number(value);
   return Number.isFinite(num) ? num : fallback;
@@ -47,6 +60,89 @@ function clampRatio(value) {
 function toText(value) {
   if (value === undefined || value === null) return '';
   return String(value).trim();
+}
+
+function toPlainObject(value) {
+  if (!value) return {};
+  if (value instanceof Map) {
+    return Object.fromEntries(value.entries());
+  }
+  if (typeof value.toObject === 'function') {
+    return value.toObject();
+  }
+  if (Array.isArray(value)) {
+    return Object.fromEntries(value);
+  }
+  if (typeof value === 'object') {
+    return value;
+  }
+  return {};
+}
+
+function average(values) {
+  if (!Array.isArray(values) || values.length === 0) {
+    return 0;
+  }
+  const total = values.reduce((sum, value) => sum + toSafeNumber(value, 0), 0);
+  return total / values.length;
+}
+
+function buildSubtopicProgress(session) {
+  const completedConcepts = new Set(
+    (session?.progress?.completed_concepts || [])
+      .map((value) => toText(value))
+      .filter(Boolean)
+  );
+
+  const knowledge = toPlainObject(session?.learner_model?.knowledge);
+
+  const conceptCompletion = (conceptId) => {
+    if (completedConcepts.has(conceptId)) {
+      return 1;
+    }
+
+    const mastery = clampRatio(knowledge[conceptId]);
+    if (mastery >= MASTERY_UNLOCK_THRESHOLD) {
+      return 1;
+    }
+
+    return clampRatio(mastery / MASTERY_UNLOCK_THRESHOLD);
+  };
+
+  return SUBTOPIC_GROUPS.map((group) => {
+    const completionValues = group.concepts.map((conceptId) => conceptCompletion(conceptId));
+    return {
+      subtopic_id: group.subtopic_id,
+      completion: Number(clampRatio(average(completionValues)).toFixed(3)),
+    };
+  });
+}
+
+function buildSessionPayloadResponse(session, sessionStatus, flatPayload) {
+  const startedAt = session?.createdAt ? new Date(session.createdAt) : null;
+  const endedAtSource = session?.submitted_at || session?.updatedAt || new Date();
+  const endedAt = new Date(endedAtSource);
+
+  return {
+    session_id: session.session_id,
+    student_id: session.student_id,
+    chapter_id: flatPayload.chapter_id,
+    session_status: sessionStatus,
+    start_time: startedAt ? startedAt.toISOString() : new Date().toISOString(),
+    end_time: endedAt.toISOString(),
+    metrics: {
+      correct_answers: flatPayload.correct_answers,
+      wrong_answers: flatPayload.wrong_answers,
+      questions_attempted: flatPayload.questions_attempted,
+      total_questions: flatPayload.total_questions,
+      retry_count: flatPayload.retry_count,
+      hints_used: flatPayload.hints_used,
+      total_hints_embedded: flatPayload.total_hints_embedded,
+      time_spent_seconds: flatPayload.time_spent_seconds,
+      topic_completion_ratio: flatPayload.topic_completion_ratio,
+    },
+    subtopic_progress: buildSubtopicProgress(session),
+  };
 }
 
 function parseGradePrefix(chapterId) {
@@ -384,9 +480,16 @@ async function submitSession(req, res) {
     }
 
     if (session.status === 'submitted') {
+      const duplicateStatus =
+        typeof body.session_status === 'string' && body.session_status.trim() === 'exited_midway'
+          ? 'exited_midway'
+          : 'completed';
+      const duplicatePayload = buildSubmissionPayload(session, duplicateStatus);
+
       return res.status(409).json({
         message: 'Session already submitted',
         recommendation: session.submitted_response,
+        session_payload: buildSessionPayloadResponse(session, duplicateStatus, duplicatePayload),
       });
     }
 
@@ -400,12 +503,14 @@ async function submitSession(req, res) {
     const sessionStatus = explicitStatus === 'exited_midway' ? 'exited_midway' : 'completed';
 
     const payload = buildSubmissionPayload(session, sessionStatus);
+    const sessionPayload = buildSessionPayloadResponse(session, sessionStatus, payload);
     const validationErrors = validateSubmissionPayload(payload);
 
     if (validationErrors.length > 0) {
       session.status = 'submission_failed';
       session.failed_submission = {
         payload,
+        session_payload: sessionPayload,
         error_message: `Validation failed: ${validationErrors.join('; ')}`,
         validation_errors: validationErrors,
         updated_at: new Date().toISOString(),
@@ -416,6 +521,7 @@ async function submitSession(req, res) {
         submitted: false,
         message: 'Session metrics failed validation',
         errors: validationErrors,
+        session_payload: sessionPayload,
       });
     }
 
@@ -476,16 +582,23 @@ async function submitSession(req, res) {
       session.failed_submission = null;
       await session.save();
 
+      const responsePayload = {
+        ...payload,
+        chapter_id: resolvedChapterId,
+      };
+
       return res.json({
         submitted: true,
         chapter_id: resolvedChapterId,
         recommendation: recommendationResponse,
+        session_payload: buildSessionPayloadResponse(session, sessionStatus, responsePayload),
       });
     } catch (error) {
       session.status = 'submission_failed';
       session.submitted_response = null;
       session.failed_submission = {
         payload,
+        session_payload: sessionPayload,
         error_message: error.message,
         error_status: error.status || null,
         error_response: error.responseBody || null,
@@ -520,6 +633,7 @@ async function submitSession(req, res) {
         upstream_status: upstreamStatus,
         upstream_response: error.responseBody || null,
         error: error.message,
+        session_payload: sessionPayload,
       });
     }
   } catch (error) {
