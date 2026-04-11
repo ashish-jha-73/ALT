@@ -749,8 +749,20 @@ function App() {
       setLoading(true);
       setError('');
       setTopicCheckpoint(null);
-      await loadNextQuestion(activeMissionConcept || undefined);
-      setScreen('question');
+
+      const nextConcept = activeMissionConcept || undefined;
+      let teachCtx = null;
+      try {
+        teachCtx = await fetchTeachingContent({ concept: nextConcept });
+        setTeachingContext(teachCtx);
+        setLearnerLevel(teachCtx?.learner_level || learnerLevel || 1);
+      } catch {
+        setTeachingContext(null);
+        teachCtx = null;
+      }
+
+      await loadNextQuestion(nextConcept);
+      setScreen(teachCtx ? 'teaching' : 'question');
     } catch (err) {
       setError(err.message);
     } finally {
@@ -870,8 +882,6 @@ function App() {
         <Header
           progress={progress}
           conceptMap={conceptMap}
-          attemptsInSession={attemptsInSession}
-          sessionTarget={sessionTargetQuestions}
           screen={screen}
           questionPayload={questionPayload}
           activeMissionConcept={activeMissionConcept}
@@ -952,8 +962,6 @@ function App() {
                feedback={feedback}
                retryEnabled={retryEnabled}
                pendingRetryAttempts={pendingRetryAttempts}
-               attemptsInSession={attemptsInSession}
-               sessionTarget={sessionTargetQuestions}
                onContinue={continueAfterFeedback}
                onRetry={continueAfterFeedback}
                onSkip={skipFromNeedReview}

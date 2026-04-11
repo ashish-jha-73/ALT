@@ -5,8 +5,6 @@ export default function FeedbackPanel({
   feedback,
   retryEnabled,
   pendingRetryAttempts,
-  attemptsInSession,
-  sessionTarget,
   onContinue,
   onRetry,
   onSkip,
@@ -181,9 +179,7 @@ export default function FeedbackPanel({
           </>
         ) : (
           <>
-            <p className="feedback-screen__progress-note">
-              {attemptsInSession} of {sessionTarget} completed
-            </p>
+            <p className="feedback-screen__progress-note">Ready for the next challenge.</p>
             <button type="button" className="btn-primary" onClick={onContinue} disabled={loading}>
               Continue Challenge
             </button>

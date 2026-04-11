@@ -1,5 +1,6 @@
 const Session = require('../models/Session');
 const Question = require('../models/Question');
+const Attempt = require('../models/Attempt');
 const { CONCEPT_GRAPH } = require('../utils/constants');
 const {
   getBearerToken,
@@ -183,6 +184,78 @@ async function resolveChapterMetricTotals(questionFallback = 10, hintsFallback =
   };
 }
 
+async function resolveSessionOutcomeMetrics(session) {
+  const attempts = await Attempt.find({ user_id: session._id })
+    .select({
+      question_id: 1,
+      final_correct: 1,
+      skipped: 1,
+      retries_used: 1,
+      used_hints: 1,
+      time_taken: 1,
+      attempts: 1,
+      createdAt: 1,
+    })
+    .sort({ createdAt: 1, _id: 1 })
+    .lean();
+
+  if (!Array.isArray(attempts) || attempts.length === 0) {
+    return null;
+  }
+
+  const latestByQuestion = new Map();
+  attempts.forEach((record) => {
+    const questionId = record?.question_id ? String(record.question_id) : '';
+    if (!questionId) {
+      return;
+    }
+    latestByQuestion.set(questionId, record);
+  });
+
+  let correctAnswers = 0;
+  let questionsAttempted = 0;
+  let unattemptedQuestions = 0;
+  let retryCount = 0;
+  let hintsUsed = 0;
+  let timeSpentSeconds = 0;
+
+  latestByQuestion.forEach((record) => {
+    const skipped = Boolean(record?.skipped);
+    const finalCorrect = Boolean(record?.final_correct);
+    const attemptsCount = Math.max(1, toNonNegativeInteger(record?.attempts, 1));
+
+    // A direct skip with no prior tries is treated as unattempted.
+    const treatedAsUnattempted = skipped && attemptsCount <= 1;
+
+    if (treatedAsUnattempted) {
+      unattemptedQuestions += 1;
+    } else {
+      questionsAttempted += 1;
+      if (finalCorrect) {
+        correctAnswers += 1;
+      }
+      retryCount += toNonNegativeInteger(record?.retries_used, 0);
+    }
+
+    hintsUsed += toNonNegativeInteger(record?.used_hints, 0);
+    timeSpentSeconds += toNonNegativeInteger(record?.time_taken, 0);
+  });
+
+  const totalQuestions = questionsAttempted + unattemptedQuestions;
+  const wrongAnswers = Math.max(0, questionsAttempted - correctAnswers);
+
+  return {
+    correctAnswers,
+    wrongAnswers,
+    questionsAttempted,
+    totalQuestions,
+    retryCount,
+    hintsUsed,
+    timeSpentSeconds,
+    unattemptedQuestions,
+  };
+}
+
 function validateSubmissionPayload(payload) {
   const errors = [];
 
@@ -204,10 +277,6 @@ function validateSubmissionPayload(payload) {
 
   if (payload.topic_completion_ratio < 0 || payload.topic_completion_ratio > 1) {
     errors.push('topic_completion_ratio must be between 0 and 1');
-  }
-
-  if (payload.session_status === 'completed' && payload.questions_attempted !== payload.total_questions) {
-    errors.push('completed sessions must have questions_attempted equal to total_questions');
   }
 
   return errors;
@@ -232,11 +301,6 @@ function normalizeSubmissionPayload(rawPayload) {
   if (payload.questions_attempted > payload.total_questions) {
     payload.questions_attempted = payload.total_questions;
     adjustments.push('questions_attempted adjusted to stay within total_questions');
-  }
-
-  if (payload.session_status === 'completed' && payload.questions_attempted !== payload.total_questions) {
-    payload.questions_attempted = payload.total_questions;
-    adjustments.push('questions_attempted set equal to total_questions for completed session');
   }
 
   if (payload.correct_answers + payload.wrong_answers !== payload.questions_attempted) {
@@ -302,11 +366,6 @@ function cookPayloadWithRandomValues(basePayload) {
   if (payload.questions_attempted > payload.total_questions) {
     payload.questions_attempted = randomIntInclusive(0, payload.total_questions);
     adjustments.push('questions_attempted randomized to satisfy total_questions constraint');
-  }
-
-  if (payload.session_status === 'completed' && payload.questions_attempted !== payload.total_questions) {
-    payload.questions_attempted = payload.total_questions;
-    adjustments.push('questions_attempted set to total_questions for completed session');
   }
 
   if (payload.correct_answers + payload.wrong_answers !== payload.questions_attempted) {
@@ -512,8 +571,18 @@ async function submitSession(req, res) {
       session.total_questions,
       session.total_hints_embedded
     );
-    session.total_questions = chapterMetrics.totalQuestions;
     session.total_hints_embedded = chapterMetrics.totalHintsEmbedded;
+
+    const sessionOutcomeMetrics = await resolveSessionOutcomeMetrics(session);
+    if (sessionOutcomeMetrics) {
+      session.correct_answers = sessionOutcomeMetrics.correctAnswers;
+      session.wrong_answers = sessionOutcomeMetrics.wrongAnswers;
+      session.questions_attempted = sessionOutcomeMetrics.questionsAttempted;
+      session.total_questions = sessionOutcomeMetrics.totalQuestions;
+      session.retry_count = sessionOutcomeMetrics.retryCount;
+      session.hints_used = sessionOutcomeMetrics.hintsUsed;
+      session.time_spent_seconds = sessionOutcomeMetrics.timeSpentSeconds;
+    }
 
     const rawPayload = buildSubmissionPayload(session, sessionStatus);
     let { payload, adjustments: validationAdjustments } = normalizeSubmissionPayload(rawPayload);

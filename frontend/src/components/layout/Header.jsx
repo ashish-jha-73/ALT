@@ -1,12 +1,9 @@
 import { useState, useEffect } from 'react';
-import ProgressBar from '../ProgressBar';
 import CognitiveLoadIndicator from '../CognitiveLoadIndicator';
 
 export default function Header({
   progress,
   conceptMap,
-  attemptsInSession = 0,
-  sessionTarget = 10,
   screen,
   questionPayload,
   activeMissionConcept,
@@ -82,13 +79,6 @@ export default function Header({
             <span className="header__mission-step">Step L{missionLevel || 1}</span>
           </div>
         )}
-        {screen === 'question' || screen === 'feedback' ? (
-          <ProgressBar
-            current={attemptsInSession}
-            total={sessionTarget}
-            label="Session"
-          />
-        ) : null}
       </div>
 
       <div className="header__right">
