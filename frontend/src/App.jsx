@@ -510,6 +510,37 @@ function App() {
     };
   }, [chapterCompleted, screen, sessionContext, sessionSubmission?.submitted, submittingSession]);
 
+  useEffect(() => {
+    if (screen !== 'end') {
+      autoCompletedSubmitAttemptedRef.current = false;
+    }
+  }, [screen]);
+
+  useEffect(() => {
+    if (!sessionContext) return;
+    if (screen !== 'end') return;
+    if (!chapterCompleted) return;
+    if (sessionSubmission?.submitted) return;
+    if (submittingSession) return;
+    if (pendingUnattemptedCount > 0) return;
+    if (autoCompletedSubmitAttemptedRef.current) return;
+
+    autoCompletedSubmitAttemptedRef.current = true;
+    (async () => {
+      const started = await handleSubmitSession('completed');
+      if (!started) {
+        autoCompletedSubmitAttemptedRef.current = false;
+      }
+    })();
+  }, [
+    chapterCompleted,
+    pendingUnattemptedCount,
+    screen,
+    sessionContext,
+    sessionSubmission?.submitted,
+    submittingSession,
+  ]);
+
   async function handleDiagnosticSubmit(answers) {
     try {
       setLoading(true);
@@ -868,16 +899,16 @@ function App() {
   }
 
   async function handleSubmitSession(finalStatus = 'completed') {
-    if (!sessionContext) return;
+    if (!sessionContext) return false;
 
     if (finalStatus === 'completed' && !chapterCompleted) {
       setError('Chapter is not complete yet. Continue learning; submit only at final chapter completion.');
-      return;
+      return false;
     }
 
     if (finalStatus === 'completed' && pendingUnattemptedCount > 0) {
       setError('Please finish all pending unattempted questions before final submission.');
-      return;
+      return false;
     }
 
     const payload = {
@@ -944,6 +975,8 @@ function App() {
     } finally {
       setSubmittingSession(false);
     }
+
+    return true;
   }
 
   const closeMasteryPopup = useCallback(() => {

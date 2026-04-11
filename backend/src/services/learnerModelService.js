@@ -16,6 +16,55 @@ function clampRange(value, min, max) {
   return Math.max(min, Math.min(max, value));
 }
 
+function toFiniteNumber(value, fallback = 0) {
+  const num = Number(value);
+  return Number.isFinite(num) ? num : fallback;
+}
+
+function applyRetryPenaltyToDelta(delta, attempts) {
+  const retryCount = Math.max(0, Math.floor(toFiniteNumber(attempts, 1)) - 1);
+  if (retryCount <= 0 || !Number.isFinite(delta)) {
+    return delta;
+  }
+
+  const retryCfg = MASTERY_UPDATE_RULES.retryPenalty || {};
+  const gainPenaltyPerRetry = Math.max(
+    0,
+    toFiniteNumber(retryCfg.gainPenaltyPerRetry, 0.42)
+  );
+  const flatGainPenaltyPerRetry = Math.max(
+    0,
+    toFiniteNumber(retryCfg.flatGainPenaltyPerRetry, 0.008)
+  );
+  const minGainMultiplier = clampRange(
+    toFiniteNumber(retryCfg.minGainMultiplier, 0.08),
+    0,
+    1
+  );
+  const lossAmplifierPerRetry = Math.max(
+    0,
+    toFiniteNumber(retryCfg.lossAmplifierPerRetry, 0.2)
+  );
+  const maxLossMultiplier = Math.max(
+    1,
+    toFiniteNumber(retryCfg.maxLossMultiplier, 2)
+  );
+
+  if (delta >= 0) {
+    const gainMultiplier = Math.max(
+      minGainMultiplier,
+      1 - retryCount * gainPenaltyPerRetry
+    );
+    return delta * gainMultiplier - retryCount * flatGainPenaltyPerRetry;
+  }
+
+  const lossMultiplier = Math.min(
+    maxLossMultiplier,
+    1 + retryCount * lossAmplifierPerRetry
+  );
+  return delta * lossMultiplier;
+}
+
 function getConfidenceAlignment(selfReported, inferredLabel, finalCorrect) {
   if ((selfReported === 'high' && !finalCorrect) || inferredLabel === 'overconfident') {
     return 'overconfidence';
@@ -298,6 +347,9 @@ function updateLearnerState({
     inferredLabel: inferredConfidence.label,
   });
   delta *= contextWeight;
+
+  // Retried answers should not recover mastery too easily after seeing feedback.
+  delta = applyRetryPenaltyToDelta(delta, attempts);
 
   if (maxDelta > 0) {
     const contextCfg = MASTERY_UPDATE_RULES.context || {};
