@@ -2540,6 +2540,155 @@
   font-size: var(--fs-sm);
 }
 
+.end-screen__reco-badges {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--sp-2);
+  margin-bottom: var(--sp-3);
+}
+
+.end-screen__badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 6px 12px;
+  border-radius: var(--radius-full);
+  font-size: var(--fs-xs);
+  font-weight: var(--fw-semibold);
+  letter-spacing: 0.01em;
+}
+
+.end-screen__badge--state {
+  background: var(--clr-secondary-bg);
+  color: var(--clr-secondary);
+  border: 1px solid rgba(26, 122, 110, 0.2);
+}
+
+.end-screen__badge--type {
+  background: var(--clr-primary-bg);
+  color: var(--clr-primary);
+  border: 1px solid rgba(200, 144, 42, 0.2);
+}
+
+.end-screen__reco-reason {
+  margin: 0 0 var(--sp-3);
+  color: var(--clr-text-secondary);
+  line-height: 1.6;
+  font-size: var(--fs-sm);
+}
+
+.end-screen__diagnosis-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: var(--sp-2);
+}
+
+.end-screen__diagnosis-item {
+  border: 1px solid var(--clr-border-light);
+  background: var(--bg-card);
+  border-radius: var(--radius-sm);
+  padding: var(--sp-2) var(--sp-3);
+}
+
+.end-screen__diagnosis-label {
+  display: block;
+  font-size: var(--fs-xs);
+  color: var(--clr-text-muted);
+}
+
+.end-screen__diagnosis-value {
+  display: block;
+  margin-top: 2px;
+  text-transform: capitalize;
+  font-size: var(--fs-sm);
+  color: var(--clr-text);
+}
+
+.end-screen__history-grid {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--sp-2);
+  margin-top: var(--sp-3);
+}
+
+.end-screen__history-item {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  border-radius: var(--radius-full);
+  border: 1px solid var(--clr-border-light);
+  background: var(--bg-card);
+  padding: 4px 10px;
+}
+
+.end-screen__history-label {
+  font-size: var(--fs-xs);
+  color: var(--clr-text-muted);
+}
+
+.end-screen__history-value {
+  font-size: var(--fs-xs);
+  color: var(--clr-text-secondary);
+  font-weight: var(--fw-semibold);
+  text-transform: capitalize;
+}
+
+.end-screen__steps-list {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-2);
+  margin: var(--sp-3) 0;
+  padding: 0;
+  list-style: none;
+}
+
+.end-screen__steps-list li {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  align-items: start;
+  gap: var(--sp-2);
+  padding: var(--sp-2) var(--sp-3);
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--clr-border-light);
+  background: var(--bg-card-alt);
+  text-transform: none;
+}
+
+.end-screen__step-index {
+  width: 22px;
+  height: 22px;
+  border-radius: var(--radius-full);
+  background: var(--clr-primary-bg);
+  color: var(--clr-primary);
+  font-size: var(--fs-xs);
+  font-weight: var(--fw-bold);
+  font-family: var(--font-mono);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  margin-top: 1px;
+}
+
+.end-screen__resource-link {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  margin-top: var(--sp-2);
+  padding: var(--sp-2) var(--sp-4);
+  border: 1px solid var(--clr-primary);
+  border-radius: var(--radius-md);
+  background: var(--clr-primary-bg);
+  color: var(--clr-primary);
+  text-decoration: none;
+  font-size: var(--fs-sm);
+  font-weight: var(--fw-semibold);
+  transition: all var(--duration-fast);
+}
+
+.end-screen__resource-link:hover {
+  transform: translateY(-1px);
+  box-shadow: var(--shadow-sm);
+}
+
 .end-screen__api-response-wrap {
   margin-top: var(--sp-4);
   border-top: 1px solid var(--clr-border-light);
@@ -2570,6 +2719,10 @@
 
 @media (max-width: 768px) {
   .end-screen__api-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .end-screen__diagnosis-grid {
     grid-template-columns: 1fr;
   }
 }

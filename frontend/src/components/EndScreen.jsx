@@ -8,6 +8,20 @@ const conceptLabels = {
   word_problem_lab: 'Word Problems',
 };
 
+function formatScore(score) {
+  const num = Number(score);
+  if (!Number.isFinite(num)) return '-';
+  if (num >= 0 && num <= 1) return `${Math.round(num * 100)}%`;
+  return `${num}`;
+}
+
+function humanizeToken(value) {
+  return String(value || '-')
+    .replace(/_/g, ' ')
+    .replace(/\s+/g, ' ')
+    .trim();
+}
+
 export default function EndScreen({
   summary,
   onContinue,
@@ -53,14 +67,22 @@ export default function EndScreen({
     return [];
   }, [recommendation, recommendationBlock]);
 
-  const recommendationResponseText = useMemo(() => {
-    if (!recommendation || Object.keys(recommendation).length === 0) return '';
-    try {
-      return JSON.stringify(recommendation, null, 2);
-    } catch (_error) {
-      return '';
-    }
-  }, [recommendation]);
+  const diagnosisItems = useMemo(() => {
+    return [
+      { label: 'Accuracy', value: diagnosis?.accuracy },
+      { label: 'Hint Dependency', value: diagnosis?.hint_dependency },
+      { label: 'Retry Behavior', value: diagnosis?.retry_behavior },
+      { label: 'Time Efficiency', value: diagnosis?.time_efficiency },
+    ].filter((item) => item.value !== undefined && item.value !== null && String(item.value).trim() !== '');
+  }, [diagnosis]);
+
+  const diagnosisHistoryItems = useMemo(() => {
+    return [
+      { label: 'Past Attempts', value: diagnosisHistory?.past_attempts },
+      { label: 'Average Performance', value: diagnosisHistory?.avg_performance },
+      { label: 'Trend', value: diagnosisHistory?.trend },
+    ].filter((item) => item.value !== undefined && item.value !== null && String(item.value).trim() !== '');
+  }, [diagnosisHistory]);
 
   const canContinue = !submittingSession;
 
@@ -177,6 +199,19 @@ export default function EndScreen({
           <>
             <p className="feedback-screen__calibration">Session submitted successfully.</p>
 
+            <div className="end-screen__reco-badges">
+              {learningState ? (
+                <span className="end-screen__badge end-screen__badge--state">
+                  Learning State: {humanizeToken(learningState)}
+                </span>
+              ) : null}
+              {recommendationType ? (
+                <span className="end-screen__badge end-screen__badge--type">
+                  Recommendation: {humanizeToken(recommendationType)}
+                </span>
+              ) : null}
+            </div>
+
             <div className="end-screen__api-grid">
               <div className="end-screen__api-item">
                 <span className="end-screen__api-key">student_id</span>
@@ -188,56 +223,60 @@ export default function EndScreen({
               </div>
               <div className="end-screen__api-item">
                 <span className="end-screen__api-key">performance_score</span>
-                <span className="end-screen__api-value">{recommendation?.performance_score ?? '-'}</span>
+                <span className="end-screen__api-value">{formatScore(recommendation?.performance_score)}</span>
               </div>
               <div className="end-screen__api-item">
                 <span className="end-screen__api-key">confidence_score</span>
-                <span className="end-screen__api-value">{recommendation?.confidence_score ?? '-'}</span>
+                <span className="end-screen__api-value">{formatScore(recommendation?.confidence_score)}</span>
               </div>
             </div>
 
-            {learningState ? <p><strong>Learning state:</strong> {learningState}</p> : null}
-            {recommendationType ? <p><strong>Recommendation type:</strong> {recommendationType}</p> : null}
-            {recommendationReason ? <p><strong>Reason:</strong> {recommendationReason}</p> : null}
+            {recommendationReason ? (
+              <p className="end-screen__reco-reason">
+                <strong>Why this recommendation:</strong> {recommendationReason}
+              </p>
+            ) : null}
 
-            {(Object.keys(diagnosis).length > 0) && (
+            {diagnosisItems.length > 0 && (
               <div className="end-screen__api-diagnosis">
                 <h4>Diagnosis</h4>
-                <p><strong>accuracy:</strong> {diagnosis?.accuracy ?? '-'}</p>
-                <p><strong>hint_dependency:</strong> {diagnosis?.hint_dependency || '-'}</p>
-                <p><strong>retry_behavior:</strong> {diagnosis?.retry_behavior || '-'}</p>
-                <p><strong>time_efficiency:</strong> {diagnosis?.time_efficiency || '-'}</p>
-                {(Object.keys(diagnosisHistory).length > 0) && (
-                  <p>
-                    <strong>history:</strong>{' '}
-                    past_attempts={diagnosisHistory?.past_attempts ?? '-'},
-                    {' '}avg_performance={diagnosisHistory?.avg_performance ?? '-'},
-                    {' '}trend={diagnosisHistory?.trend || '-'}
-                  </p>
+                <div className="end-screen__diagnosis-grid">
+                  {diagnosisItems.map((item) => (
+                    <div key={item.label} className="end-screen__diagnosis-item">
+                      <span className="end-screen__diagnosis-label">{item.label}</span>
+                      <span className="end-screen__diagnosis-value">{humanizeToken(item.value)}</span>
+                    </div>
+                  ))}
+                </div>
+                {diagnosisHistoryItems.length > 0 && (
+                  <div className="end-screen__history-grid">
+                    {diagnosisHistoryItems.map((item) => (
+                      <div key={item.label} className="end-screen__history-item">
+                        <span className="end-screen__history-label">{item.label}</span>
+                        <span className="end-screen__history-value">{humanizeToken(item.value)}</span>
+                      </div>
+                    ))}
+                  </div>
                 )}
               </div>
             )}
 
             {nextSteps.length > 0 ? (
-              <ul>
+              <ol className="end-screen__steps-list">
                 {nextSteps.map((step, idx) => (
-                  <li key={`${step}-${idx}`}>{step}</li>
+                  <li key={`${step}-${idx}`}>
+                    <span className="end-screen__step-index">{idx + 1}</span>
+                    <span>{step}</span>
+                  </li>
                 ))}
-              </ul>
+              </ol>
             ) : (
               <p className="end-screen__empty">No recommendation.next_steps returned.</p>
             )}
             {prerequisiteUrl ? (
-              <p>
-                <a href={prerequisiteUrl} target="_blank" rel="noreferrer">Open prerequisite resource</a>
-              </p>
-            ) : null}
-
-            {recommendationResponseText ? (
-              <div className="end-screen__api-response-wrap">
-                <h4 className="end-screen__api-response-title">Recommendation API Response</h4>
-                <pre className="end-screen__api-response-pre">{recommendationResponseText}</pre>
-              </div>
+              <a className="end-screen__resource-link" href={prerequisiteUrl} target="_blank" rel="noreferrer">
+                Open prerequisite resource
+              </a>
             ) : null}
           </>
         ) : chapterCompleted ? (
