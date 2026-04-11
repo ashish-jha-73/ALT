@@ -624,9 +624,19 @@ function App() {
   async function handleSubmit(payload) {
     if (questionPayload?.activity_type !== 'question') return;
 
+    if (forceUnattemptedMode && payload?.skipped) {
+      setError('Skip is disabled while finishing pending unattempted questions.');
+      return;
+    }
+
     try {
       setLoading(true);
       setError('');
+
+      const effectiveAttempts = forceUnattemptedMode
+        ? 1
+        : Math.max(1, Number(payload.attempts || 1));
+      const effectiveSkipped = forceUnattemptedMode ? false : Boolean(payload.skipped);
 
       const result = await submitAttempt({
         student_id: sessionContext.student_id,
@@ -634,32 +644,32 @@ function App() {
         user_name: userName,
         question_id: questionPayload.question.id,
         selected_answer: payload.selected_answer,
-        attempts: payload.attempts,
+        attempts: effectiveAttempts,
         time_taken: payload.time_taken,
         used_hints: payload.used_hints,
         confidence: payload.confidence,
-        skipped: payload.skipped,
+        skipped: effectiveSkipped,
         action_taken: questionPayload?.adaptive_context?.selected_action,
       });
 
       setFeedback(result);
       setHintsUsedSession((prev) => prev + (payload.used_hints || 0));
 
-      if (!result.correctness && !payload.skipped) {
+      if (!result.correctness && !effectiveSkipped && !forceUnattemptedMode) {
         setRetryEnabled(true);
-        setPendingRetryAttempts((payload.attempts || 1) + 1);
+        setPendingRetryAttempts(effectiveAttempts + 1);
         setScreen('feedback');
         return;
       }
 
       if (!sessionMetricsLocked) {
-        const directSkipUnattempted = Boolean(payload.skipped) && Number(payload.attempts || 1) <= 1;
+        const directSkipUnattempted = effectiveSkipped && effectiveAttempts <= 1;
         await updateSessionProgress({
           increments: {
             correct_answers: result.correctness ? 1 : 0,
             wrong_answers: result.correctness || directSkipUnattempted ? 0 : 1,
             questions_attempted: directSkipUnattempted ? 0 : 1,
-            retry_count: directSkipUnattempted ? 0 : Math.max(0, Number(payload.attempts || 1) - 1),
+            retry_count: directSkipUnattempted ? 0 : Math.max(0, effectiveAttempts - 1),
             hints_used: Number(payload.used_hints || 0),
             time_spent_seconds: Number(payload.time_taken || 0),
           },
@@ -1053,7 +1063,7 @@ function App() {
            {screen === 'feedback' && (
              <FeedbackPanel
                feedback={feedback}
-               retryEnabled={retryEnabled}
+               retryEnabled={retryEnabled && !forceUnattemptedMode}
                pendingRetryAttempts={pendingRetryAttempts}
                onContinue={continueAfterFeedback}
                onRetry={continueAfterFeedback}
