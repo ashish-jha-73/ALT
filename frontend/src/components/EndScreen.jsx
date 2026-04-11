@@ -286,7 +286,7 @@ export default function EndScreen({
         )}
       </div>
 
-      {!sessionSubmission?.submitted && chapterCompleted && (
+      {chapterCompleted && (
         <button
           type="button"
           className="btn-primary"
@@ -294,13 +294,15 @@ export default function EndScreen({
           disabled={submittingSession}
           style={{ marginBottom: 10 }}
         >
-          {submittingSession ? 'Submitting Session...' : 'Retry Session Submission'}
+          {submittingSession
+            ? 'Submitting Session...'
+            : (sessionSubmission?.submitted ? 'Send Payload Again' : 'Retry Session Submission')}
         </button>
       )}
 
       <button type="button" className="btn-primary" onClick={onContinue} disabled={!canContinue}>
         {sessionSubmission?.submitted
-          ? 'Finish Session'
+          ? 'Finish and Go to Dashboard'
           : 'Continue Learning'}
       </button>
     </div>

@@ -31,6 +31,7 @@ import {
 const DEFAULT_SESSION_TARGET_QUESTIONS = 10;
 const CHAPTER_ID = import.meta.env.VITE_CHAPTER_ID || 'grade8_linear_eq';
 const FINAL_CHAPTER_CONCEPT_ID = (import.meta.env.VITE_FINAL_CHAPTER_CONCEPT_ID || '').trim();
+const PORTAL_DASHBOARD_URL = 'https://kaushik-dev.online/dashboard';
 const SESSION_STORAGE = {
   token: 'token',
   studentId: 'student_id',
@@ -899,6 +900,14 @@ function App() {
 
   async function continueAfterEnd() {
     if (sessionSubmission?.submitted) {
+      if (sessionContext?.session_id) {
+        clearFailedSubmission(sessionContext.session_id);
+      }
+      clearStoredSessionContext();
+      if (typeof window !== 'undefined') {
+        window.location.assign(PORTAL_DASHBOARD_URL);
+        return;
+      }
       resetSessionContext('Session submitted successfully. Open the chapter from the portal to start a new session.');
       return;
     }
