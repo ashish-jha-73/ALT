@@ -117,6 +117,13 @@ export async function updateSessionProgress(payload) {
   });
 }
 
+export async function saveCheckpoint(payload) {
+  return request('/save-checkpoint', {
+    method: 'POST',
+    body: JSON.stringify(payload),
+  });
+}
+
 export async function submitSession(payload) {
   return request('/submit-session', {
     method: 'POST',

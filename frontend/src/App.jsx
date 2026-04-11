@@ -19,6 +19,7 @@ import {
   fetchProgress,
   fetchSessionSummary,
   fetchTeachingContent,
+  saveCheckpoint,
   setSessionContext as setApiSessionContext,
   startSession,
   submitAttempt,
@@ -214,6 +215,8 @@ function App() {
   const [forceUnattemptedMode, setForceUnattemptedMode] = useState(false);
   const [pendingUnattemptedCount, setPendingUnattemptedCount] = useState(0);
   const [submittingSession, setSubmittingSession] = useState(false);
+  const [savingCheckpoint, setSavingCheckpoint] = useState(false);
+  const [checkpointNotice, setCheckpointNotice] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const exitSubmissionSentRef = useRef(false);
@@ -247,6 +250,8 @@ function App() {
     setSessionMetricsLocked(false);
     setForceUnattemptedMode(false);
     setPendingUnattemptedCount(0);
+    setSavingCheckpoint(false);
+    setCheckpointNotice('');
     exitSubmissionSentRef.current = false;
     autoCompletedSubmitAttemptedRef.current = false;
     setError(message);
@@ -259,6 +264,14 @@ function App() {
     }, 2000);
     return () => clearTimeout(timer);
   }, [xpToast]);
+
+  useEffect(() => {
+    if (!checkpointNotice) return undefined;
+    const timer = setTimeout(() => {
+      setCheckpointNotice('');
+    }, 4000);
+    return () => clearTimeout(timer);
+  }, [checkpointNotice]);
 
   async function loadProgress() {
     const data = await fetchProgress();
@@ -320,6 +333,16 @@ function App() {
           session_id: sessionContext.session_id,
           chapter_id: sessionContext.chapter_id || CHAPTER_ID,
         });
+
+        if (startedSession?.resumed_from_checkpoint) {
+          const restoredAt = startedSession?.checkpoint_saved_at
+            ? new Date(startedSession.checkpoint_saved_at)
+            : null;
+          const restoredAtText = restoredAt && !Number.isNaN(restoredAt.getTime())
+            ? restoredAt.toLocaleString()
+            : 'your latest checkpoint';
+          setCheckpointNotice(`Restored progress from ${restoredAtText}.`);
+        }
 
         exitSubmissionSentRef.current = false;
         autoCompletedSubmitAttemptedRef.current = false;
@@ -540,6 +563,35 @@ function App() {
     sessionSubmission?.submitted,
     submittingSession,
   ]);
+
+  async function handleSaveProgress() {
+    if (!sessionContext || savingCheckpoint) return;
+
+    try {
+      setSavingCheckpoint(true);
+      setError('');
+
+      const response = await saveCheckpoint({
+        student_id: sessionContext.student_id,
+        session_id: sessionContext.session_id,
+        chapter_id: sessionContext.chapter_id || CHAPTER_ID,
+      });
+
+      const conceptId = response?.snapshot?.current_concept || progress?.progress?.current_concept || '';
+      const conceptLabel = conceptId ? conceptId.replace(/_/g, ' ') : 'your current concept';
+
+      const savedAt = response?.saved_at ? new Date(response.saved_at) : new Date();
+      const savedAtText = Number.isNaN(savedAt.getTime())
+        ? 'now'
+        : savedAt.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+
+      setCheckpointNotice(`Progress saved at ${savedAtText} on ${conceptLabel}.`);
+    } catch (err) {
+      setError(err.message);
+    } finally {
+      setSavingCheckpoint(false);
+    }
+  }
 
   async function handleDiagnosticSubmit(answers) {
     try {
@@ -1010,6 +1062,8 @@ function App() {
         timeSpentSession={timeSpent}
         currentScreen={screen}
         onNavigateMap={() => setScreen('map')}
+        onSaveProgress={sessionSubmission?.submitted ? undefined : handleSaveProgress}
+        savingProgress={savingCheckpoint || loading || submittingSession}
         onLogout={resetSessionContext}
       />
 
@@ -1023,6 +1077,16 @@ function App() {
         />
 
         <div className="content">
+          {checkpointNotice && (
+            <div className="info-banner">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M20 6L9 17l-5-5" />
+              </svg>
+              <span>{checkpointNotice}</span>
+              <button type="button" onClick={() => setCheckpointNotice('')}>&times;</button>
+            </div>
+          )}
+
           {error && (
             <div className="error-banner">
               <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">

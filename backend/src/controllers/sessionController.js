@@ -1,10 +1,12 @@
 const Session = require('../models/Session');
 const Question = require('../models/Question');
 const Attempt = require('../models/Attempt');
+const StudentCheckpoint = require('../models/StudentCheckpoint');
 const { CONCEPT_GRAPH } = require('../utils/constants');
 const {
   getBearerToken,
   getRequiredSessionIdentity,
+  resolveChapterId,
 } = require('../utils/sessionContext');
 
 const EXTERNAL_RECOMMENDATION_URL = 'https://kaushik-dev.online/api/recommend/';
@@ -47,6 +49,86 @@ function toNonNegativeInteger(value, fallback = 0) {
 
 function clampRatio(value) {
   return Math.max(0, Math.min(1, toSafeNumber(value, 0)));
+}
+
+function cloneSnapshotValue(value) {
+  if (value === undefined || value === null) {
+    return {};
+  }
+
+  try {
+    return JSON.parse(JSON.stringify(value));
+  } catch (_error) {
+    return {};
+  }
+}
+
+function buildCheckpointSnapshot(session) {
+  const plainSession = session.toObject({ depopulate: true, flattenMaps: true });
+
+  return {
+    progress: cloneSnapshotValue(plainSession.progress),
+    learner_model: cloneSnapshotValue(plainSession.learner_model),
+    metrics: {
+      correct_answers: toNonNegativeInteger(plainSession.correct_answers),
+      wrong_answers: toNonNegativeInteger(plainSession.wrong_answers),
+      questions_attempted: toNonNegativeInteger(plainSession.questions_attempted),
+      total_questions: toNonNegativeInteger(plainSession.total_questions),
+      retry_count: toNonNegativeInteger(plainSession.retry_count),
+      hints_used: toNonNegativeInteger(plainSession.hints_used),
+      total_hints_embedded: toNonNegativeInteger(plainSession.total_hints_embedded),
+      time_spent_seconds: toNonNegativeInteger(plainSession.time_spent_seconds),
+      topic_completion_ratio: clampRatio(plainSession.topic_completion_ratio),
+    },
+  };
+}
+
+function applyCheckpointToSession(session, checkpoint) {
+  const snapshotProgress = cloneSnapshotValue(checkpoint?.progress);
+  const snapshotLearnerModel = cloneSnapshotValue(checkpoint?.learner_model);
+  const snapshotMetrics = checkpoint?.metrics || {};
+
+  if (Object.keys(snapshotProgress).length > 0) {
+    session.progress = snapshotProgress;
+  }
+
+  if (Object.keys(snapshotLearnerModel).length > 0) {
+    session.learner_model = snapshotLearnerModel;
+  }
+
+  session.correct_answers = toNonNegativeInteger(snapshotMetrics.correct_answers, session.correct_answers);
+  session.wrong_answers = toNonNegativeInteger(snapshotMetrics.wrong_answers, session.wrong_answers);
+  session.questions_attempted = toNonNegativeInteger(
+    snapshotMetrics.questions_attempted,
+    session.questions_attempted
+  );
+  session.retry_count = toNonNegativeInteger(snapshotMetrics.retry_count, session.retry_count);
+  session.hints_used = toNonNegativeInteger(snapshotMetrics.hints_used, session.hints_used);
+  session.time_spent_seconds = toNonNegativeInteger(
+    snapshotMetrics.time_spent_seconds,
+    session.time_spent_seconds
+  );
+  session.topic_completion_ratio = clampRatio(
+    snapshotMetrics.topic_completion_ratio !== undefined
+      ? snapshotMetrics.topic_completion_ratio
+      : session.topic_completion_ratio
+  );
+
+  const checkpointTotalQuestions = toNonNegativeInteger(
+    snapshotMetrics.total_questions,
+    session.total_questions
+  );
+  if (checkpointTotalQuestions > 0) {
+    session.total_questions = checkpointTotalQuestions;
+  }
+
+  const checkpointTotalHints = toNonNegativeInteger(
+    snapshotMetrics.total_hints_embedded,
+    session.total_hints_embedded
+  );
+  if (checkpointTotalHints > 0 || session.total_hints_embedded === 0) {
+    session.total_hints_embedded = checkpointTotalHints;
+  }
 }
 
 function randomIntInclusive(min, max) {
@@ -407,6 +489,8 @@ function cookPayloadWithRandomValues(basePayload) {
 async function getOrCreateSession(req) {
   const body = req.body || {};
   const { studentId, sessionId } = getRequiredSessionIdentity(req);
+  const requestedChapterId = resolveChapterId(req);
+  const chapterId = (requestedChapterId || CHAPTER_ID || '').trim() || CHAPTER_ID;
   const { totalQuestions, totalHintsEmbedded } = await resolveChapterMetricTotals(
     body.total_questions,
     body.total_hints_embedded
@@ -417,20 +501,43 @@ async function getOrCreateSession(req) {
     session_id: sessionId,
   });
 
+  let resumedFromCheckpoint = false;
+  let checkpointSavedAt = null;
+
   if (!session) {
-    session = await Session.create({
+    session = new Session({
       student_id: studentId,
       session_id: sessionId,
-      chapter_id: CHAPTER_ID,
+      chapter_id: chapterId,
       name: studentId,
       total_questions: totalQuestions,
       total_hints_embedded: totalHintsEmbedded,
       status: 'in_progress',
     });
-    return session;
+
+    const checkpoint = await StudentCheckpoint.findOne({
+      student_id: studentId,
+      chapter_id: chapterId,
+    })
+      .sort({ saved_at: -1, updatedAt: -1 })
+      .lean();
+
+    if (checkpoint) {
+      applyCheckpointToSession(session, checkpoint);
+      resumedFromCheckpoint = true;
+      checkpointSavedAt = checkpoint.saved_at || checkpoint.updatedAt || null;
+    }
+
+    await session.save();
+
+    return {
+      session,
+      resumedFromCheckpoint,
+      checkpointSavedAt,
+    };
   }
 
-  session.chapter_id = CHAPTER_ID;
+  session.chapter_id = chapterId;
   session.total_questions = totalQuestions;
   session.total_hints_embedded = totalHintsEmbedded;
   if (!session.name) {
@@ -438,17 +545,29 @@ async function getOrCreateSession(req) {
   }
 
   await session.save();
-  return session;
+
+  return {
+    session,
+    resumedFromCheckpoint,
+    checkpointSavedAt,
+  };
 }
 
 async function startSession(req, res) {
   try {
-    const session = await getOrCreateSession(req);
+    const {
+      session,
+      resumedFromCheckpoint,
+      checkpointSavedAt,
+    } = await getOrCreateSession(req);
+
     return res.json({
       student_id: session.student_id,
       session_id: session.session_id,
       chapter_id: session.chapter_id,
       status: session.status,
+      resumed_from_checkpoint: resumedFromCheckpoint,
+      checkpoint_saved_at: checkpointSavedAt,
       submitted_response: session.submitted_response || null,
       metrics: {
         correct_answers: session.correct_answers,
@@ -526,6 +645,66 @@ async function updateProgress(req, res) {
         total_hints_embedded: session.total_hints_embedded,
         time_spent_seconds: session.time_spent_seconds,
         topic_completion_ratio: session.topic_completion_ratio,
+      },
+    });
+  } catch (error) {
+    return res.status(400).json({ message: error.message });
+  }
+}
+
+async function saveCheckpoint(req, res) {
+  try {
+    const { studentId, sessionId } = getRequiredSessionIdentity(req);
+    const session = await Session.findOne({
+      student_id: studentId,
+      session_id: sessionId,
+    });
+
+    if (!session) {
+      return res.status(404).json({ message: 'Session not found' });
+    }
+
+    if (session.status === 'submitted' || session.status === 'submitting') {
+      return res.status(409).json({
+        message: 'Cannot save checkpoint for a submitted session',
+      });
+    }
+
+    const chapterId = String(session.chapter_id || resolveChapterId(req) || CHAPTER_ID).trim() || CHAPTER_ID;
+    const snapshot = buildCheckpointSnapshot(session);
+    const savedAt = new Date();
+
+    const checkpoint = await StudentCheckpoint.findOneAndUpdate(
+      {
+        student_id: studentId,
+        chapter_id: chapterId,
+      },
+      {
+        student_id: studentId,
+        chapter_id: chapterId,
+        source_session_id: sessionId,
+        progress: snapshot.progress,
+        learner_model: snapshot.learner_model,
+        metrics: snapshot.metrics,
+        saved_at: savedAt,
+      },
+      {
+        upsert: true,
+        new: true,
+        setDefaultsOnInsert: true,
+      }
+    );
+
+    return res.json({
+      saved: true,
+      student_id: checkpoint.student_id,
+      chapter_id: checkpoint.chapter_id,
+      source_session_id: checkpoint.source_session_id,
+      saved_at: checkpoint.saved_at,
+      snapshot: {
+        current_subtopic: checkpoint.progress?.current_subtopic || '',
+        current_concept: checkpoint.progress?.current_concept || '',
+        topic_completion_ratio: clampRatio(checkpoint.metrics?.topic_completion_ratio),
       },
     });
   } catch (error) {
@@ -726,5 +905,6 @@ async function submitSession(req, res) {
 module.exports = {
   startSession,
   updateProgress,
+  saveCheckpoint,
   submitSession,
 };
