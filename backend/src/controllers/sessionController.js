@@ -279,6 +279,13 @@ function validateSubmissionPayload(payload) {
     errors.push('topic_completion_ratio must be between 0 and 1');
   }
 
+  if (
+    payload.session_status === 'completed'
+    && payload.questions_attempted !== payload.total_questions
+  ) {
+    errors.push('For completed session, questions_attempted must equal total_questions');
+  }
+
   return errors;
 }
 
@@ -587,10 +594,16 @@ async function submitSession(req, res) {
     const rawPayload = buildSubmissionPayload(session, sessionStatus);
     let { payload, adjustments: validationAdjustments } = normalizeSubmissionPayload(rawPayload);
     let validationErrors = validateSubmissionPayload(payload);
+    const pendingUnattemptedQuestions = Math.max(
+      0,
+      toNonNegativeInteger(sessionOutcomeMetrics?.unattemptedQuestions, 0)
+    );
 
-    // If any rule still fails, cook randomized values that satisfy constraints before upstream submit.
+    // For non-completed sessions, attempt a best-effort repair before upstream submit.
+    // Completed sessions must be deterministic and satisfy attempted == total by real learner attempts.
     let cookAttempts = 0;
-    while (validationErrors.length > 0 && cookAttempts < 3) {
+    const allowRandomRepair = sessionStatus !== 'completed';
+    while (allowRandomRepair && validationErrors.length > 0 && cookAttempts < 3) {
       const cooked = cookPayloadWithRandomValues(payload);
       payload = cooked.payload;
       validationAdjustments = [...validationAdjustments, ...cooked.adjustments];
@@ -614,6 +627,7 @@ async function submitSession(req, res) {
         message: 'Session metrics failed validation',
         errors: validationErrors,
         validation_adjustments: validationAdjustments,
+        pending_unattempted_questions: pendingUnattemptedQuestions,
       });
     }
 

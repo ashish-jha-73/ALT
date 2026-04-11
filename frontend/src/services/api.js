@@ -55,9 +55,10 @@ export async function fetchProgress() {
   return request('/progress');
 }
 
-export async function fetchNextQuestion({ concept } = {}) {
+export async function fetchNextQuestion({ concept, forceUnattempted } = {}) {
   const params = new URLSearchParams();
   if (concept) params.set('concept', concept);
+  if (forceUnattempted) params.set('force_unattempted', '1');
   const query = params.toString();
   return request(query ? `/next-question?${query}` : '/next-question');
 }

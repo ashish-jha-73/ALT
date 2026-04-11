@@ -94,6 +94,11 @@ function isChapterCompleted(progressData, conceptMapData) {
   return false;
 }
 
+function getPendingUnattemptedCount(progressData) {
+  const pending = Number(progressData?.session_metrics?.pending_unattempted_questions || 0);
+  return Number.isFinite(pending) ? Math.max(0, Math.floor(pending)) : 0;
+}
+
 function readSessionContextFromUrl() {
   const params = new URLSearchParams(window.location.search || '');
 
@@ -206,6 +211,8 @@ function App() {
   const [sessionSubmission, setSessionSubmission] = useState(null);
   const [chapterCompleted, setChapterCompleted] = useState(false);
   const [sessionMetricsLocked, setSessionMetricsLocked] = useState(false);
+  const [forceUnattemptedMode, setForceUnattemptedMode] = useState(false);
+  const [pendingUnattemptedCount, setPendingUnattemptedCount] = useState(0);
   const [submittingSession, setSubmittingSession] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
@@ -238,6 +245,8 @@ function App() {
     setSessionSubmission(null);
     setChapterCompleted(false);
     setSessionMetricsLocked(false);
+    setForceUnattemptedMode(false);
+    setPendingUnattemptedCount(0);
     exitSubmissionSentRef.current = false;
     autoCompletedSubmitAttemptedRef.current = false;
     setError(message);
@@ -260,6 +269,7 @@ function App() {
       data?.session_metrics?.total_questions || DEFAULT_SESSION_TARGET_QUESTIONS
     );
     setSessionTargetQuestions(fullChapterTotal > 0 ? fullChapterTotal : DEFAULT_SESSION_TARGET_QUESTIONS);
+    setPendingUnattemptedCount(getPendingUnattemptedCount(data));
     setProgress(data);
     return data;
   }
@@ -270,8 +280,10 @@ function App() {
     return data;
   }
 
-  async function loadNextQuestion(concept) {
-    const payload = await fetchNextQuestion({ concept });
+  async function loadNextQuestion(concept, { forceUnattempted = false } = {}) {
+    const payload = await fetchNextQuestion({ concept, forceUnattempted });
+    setPendingUnattemptedCount(Number(payload?.pending_unattempted_questions || 0));
+    setForceUnattemptedMode(Boolean(payload?.force_unattempted_mode));
     setQuestionPayload(payload);
     setRetryEnabled(false);
     setPendingRetryAttempts(1);
@@ -312,6 +324,7 @@ function App() {
         exitSubmissionSentRef.current = false;
         autoCompletedSubmitAttemptedRef.current = false;
         setSessionMetricsLocked(false);
+        setForceUnattemptedMode(false);
 
         if (startedSession?.status === 'submitted' || startedSession?.status === 'submitting') {
           setChapterCompleted(true);
@@ -382,13 +395,14 @@ function App() {
 
         const progressData = await loadProgress();
         const conceptMapData = await loadConceptMap();
+        const pendingUnattempted = getPendingUnattemptedCount(progressData);
         const existingMetrics = progressData?.session_metrics || {};
         const existingAttempted = Number(existingMetrics.questions_attempted || 0);
         const existingTotal = Number(
           existingMetrics.total_questions || sessionTargetQuestions || DEFAULT_SESSION_TARGET_QUESTIONS
         );
         setSessionMetricsLocked(existingTotal > 0 && existingAttempted >= existingTotal);
-        setChapterCompleted(isChapterCompleted(progressData, conceptMapData));
+        setChapterCompleted(isChapterCompleted(progressData, conceptMapData) && pendingUnattempted === 0);
         setActiveMissionConcept(resolveMissionConcept(progressData, conceptMapData));
 
         try {
@@ -531,7 +545,17 @@ function App() {
     setTeachingContext(null);
     try {
       setLoading(true);
-      await loadNextQuestion(activeMissionConcept || undefined);
+      const nextPayload = await loadNextQuestion(activeMissionConcept || undefined, {
+        forceUnattempted: forceUnattemptedMode,
+      });
+      if (nextPayload?.activity_type === 'review_complete') {
+        setForceUnattemptedMode(false);
+        setChapterCompleted(true);
+        setSessionMetricsLocked(true);
+        await loadSummary();
+        setScreen('end');
+        return;
+      }
       setScreen('question');
     } catch (err) {
       setError(err.message);
@@ -548,8 +572,30 @@ function App() {
 
       const freshProgress = await loadProgress();
       const freshConceptMap = await loadConceptMap();
+      const pendingUnattempted = getPendingUnattemptedCount(freshProgress);
+      const chapterConceptDone = isChapterCompleted(freshProgress, freshConceptMap);
+
+      if (chapterConceptDone && pendingUnattempted > 0) {
+        setForceUnattemptedMode(true);
+        setChapterCompleted(false);
+        setSessionMetricsLocked(false);
+        setTeachingContext(null);
+        const replayPayload = await loadNextQuestion(undefined, { forceUnattempted: true });
+        if (replayPayload?.activity_type === 'review_complete') {
+          setForceUnattemptedMode(false);
+          setChapterCompleted(true);
+          setSessionMetricsLocked(true);
+          await loadSummary();
+          setScreen('end');
+          return;
+        }
+        setScreen('question');
+        return;
+      }
+
       const missionConcept = resolveMissionConcept(freshProgress, freshConceptMap, activeMissionConcept);
       setActiveMissionConcept(missionConcept);
+      setForceUnattemptedMode(false);
 
       let teachCtx = null;
       try {
@@ -607,12 +653,13 @@ function App() {
       }
 
       if (!sessionMetricsLocked) {
+        const directSkipUnattempted = Boolean(payload.skipped) && Number(payload.attempts || 1) <= 1;
         await updateSessionProgress({
           increments: {
             correct_answers: result.correctness ? 1 : 0,
-            wrong_answers: result.correctness ? 0 : 1,
-            questions_attempted: 1,
-            retry_count: Math.max(0, Number(payload.attempts || 1) - 1),
+            wrong_answers: result.correctness || directSkipUnattempted ? 0 : 1,
+            questions_attempted: directSkipUnattempted ? 0 : 1,
+            retry_count: directSkipUnattempted ? 0 : Math.max(0, Number(payload.attempts || 1) - 1),
             hints_used: Number(payload.used_hints || 0),
             time_spent_seconds: Number(payload.time_taken || 0),
           },
@@ -628,6 +675,8 @@ function App() {
 
       const updatedProgress = await loadProgress();
       const updatedConceptMap = await loadConceptMap();
+      const pendingUnattempted = getPendingUnattemptedCount(updatedProgress);
+      setPendingUnattemptedCount(pendingUnattempted);
 
       const nodeCount = (updatedConceptMap?.nodes || []).length || 1;
       const completedCount = (updatedProgress?.progress?.completed_concepts || []).length;
@@ -635,7 +684,8 @@ function App() {
         topic_completion_ratio: Math.max(0, Math.min(1, completedCount / nodeCount)),
       });
 
-      const chapterDoneNow = isChapterCompleted(updatedProgress, updatedConceptMap);
+      const chapterConceptDone = isChapterCompleted(updatedProgress, updatedConceptMap);
+      const chapterDoneNow = chapterConceptDone && pendingUnattempted === 0;
       setChapterCompleted(chapterDoneNow);
 
       const newCompleted = updatedProgress?.progress?.completed_concepts || [];
@@ -655,9 +705,28 @@ function App() {
       const nextCount = attemptsInSession + 1;
       setAttemptsInSession(nextCount);
 
+      if (chapterConceptDone && pendingUnattempted > 0) {
+        setChapterCompleted(false);
+        setSessionMetricsLocked(false);
+        setForceUnattemptedMode(true);
+        const replayPayload = await loadNextQuestion(undefined, { forceUnattempted: true });
+        if (replayPayload?.activity_type === 'review_complete') {
+          setForceUnattemptedMode(false);
+          setChapterCompleted(true);
+          setSessionMetricsLocked(true);
+          setTopicCheckpoint(null);
+          await loadSummary();
+          setScreen('end');
+          return;
+        }
+        setScreen('feedback');
+        return;
+      }
+
       if (chapterDoneNow) {
         // Freeze metrics only when full chapter completion is reached.
         setSessionMetricsLocked(true);
+        setForceUnattemptedMode(false);
         setTopicCheckpoint(null);
         await loadSummary();
         setScreen('end');
@@ -696,7 +765,17 @@ function App() {
         user_name: userName,
         lesson_key: lessonKey,
       });
-      await loadNextQuestion(activeMissionConcept || undefined);
+      const nextPayload = await loadNextQuestion(activeMissionConcept || undefined, {
+        forceUnattempted: forceUnattemptedMode,
+      });
+      if (nextPayload?.activity_type === 'review_complete') {
+        setForceUnattemptedMode(false);
+        setChapterCompleted(true);
+        setSessionMetricsLocked(true);
+        await loadSummary();
+        setScreen('end');
+        return;
+      }
       setScreen('question');
     } catch (err) {
       setError(err.message);
@@ -710,6 +789,11 @@ function App() {
   }
 
   async function skipFromNeedReview() {
+    if (forceUnattemptedMode) {
+      setError('Skip is disabled while finishing pending unattempted questions.');
+      return;
+    }
+
     await handleSubmit({
       selected_answer: '__SKIPPED__',
       confidence: feedback?.inferred_confidence?.label === 'overconfident' ? 'medium' : 'low',
@@ -735,12 +819,15 @@ function App() {
     setSessionSubmission(null);
     autoCompletedSubmitAttemptedRef.current = false;
     setSessionMetricsLocked(true);
+    setForceUnattemptedMode(false);
+    setPendingUnattemptedCount(0);
     setError('');
     setScreen('map');
 
     const progressData = await loadProgress();
     const conceptMapData = await loadConceptMap();
-    setChapterCompleted(isChapterCompleted(progressData, conceptMapData));
+    const pendingUnattempted = getPendingUnattemptedCount(progressData);
+    setChapterCompleted(isChapterCompleted(progressData, conceptMapData) && pendingUnattempted === 0);
     setActiveMissionConcept(resolveMissionConcept(progressData, conceptMapData));
   }
 
@@ -775,6 +862,11 @@ function App() {
 
     if (finalStatus === 'completed' && !chapterCompleted) {
       setError('Chapter is not complete yet. Continue learning; submit only at final chapter completion.');
+      return;
+    }
+
+    if (finalStatus === 'completed' && pendingUnattemptedCount > 0) {
+      setError('Please finish all pending unattempted questions before final submission.');
       return;
     }
 
@@ -952,6 +1044,7 @@ function App() {
                  loading={loading}
                  initialAttempts={pendingRetryAttempts}
                  feedback={feedback}
+                allowSkip={!forceUnattemptedMode}
                  onBackToMap={() => setScreen('map')}
                />
              )
@@ -966,6 +1059,7 @@ function App() {
                onRetry={continueAfterFeedback}
                onSkip={skipFromNeedReview}
                loading={loading}
+              allowSkip={!forceUnattemptedMode}
              />
            )}
 

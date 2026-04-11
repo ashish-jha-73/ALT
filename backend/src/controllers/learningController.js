@@ -1,5 +1,6 @@
 const Session = require('../models/Session');
 const Question = require('../models/Question');
+const Attempt = require('../models/Attempt');
 const { processAttempt } = require('../services/learningService');
 const { chooseAdaptiveAction } = require('../services/adaptiveEngineService');
 const { selectQuestionForAction, selectQuestionForConcept } = require('../services/questionSelectionService');
@@ -32,6 +33,155 @@ function toSafeNumber(value, fallback = 0) {
 
 function toNonNegativeInteger(value, fallback = 0) {
   return Math.max(0, Math.floor(toSafeNumber(value, fallback)));
+}
+
+function isTruthyFlag(value) {
+  if (typeof value === 'boolean') {
+    return value;
+  }
+
+  const normalized = String(value || '').trim().toLowerCase();
+  return normalized === '1' || normalized === 'true' || normalized === 'yes';
+}
+
+async function resolvePendingUnattemptedAttempts(userId) {
+  const rows = await Attempt.aggregate([
+    {
+      $match: {
+        user_id: userId,
+      },
+    },
+    {
+      $sort: {
+        createdAt: -1,
+        _id: -1,
+      },
+    },
+    {
+      $group: {
+        _id: '$question_id',
+        question_id: { $first: '$question_id' },
+        skipped: { $first: '$skipped' },
+        attempts: { $first: '$attempts' },
+        createdAt: { $first: '$createdAt' },
+      },
+    },
+  ]);
+
+  return rows
+    .filter((row) => {
+      const attemptsCount = Math.max(1, toNonNegativeInteger(row?.attempts, 1));
+      return Boolean(row?.question_id) && Boolean(row?.skipped) && attemptsCount <= 1;
+    })
+    .sort((a, b) => {
+      const aTime = new Date(a?.createdAt || 0).getTime();
+      const bTime = new Date(b?.createdAt || 0).getTime();
+      return aTime - bTime;
+    });
+}
+
+async function resolvePendingUnattemptedCount(userId) {
+  const pending = await resolvePendingUnattemptedAttempts(userId);
+  return pending.length;
+}
+
+function buildQuestionResponse({ user, selected, engine, guidance, remedial, forceUnattemptedMode, pendingUnattemptedCount }) {
+  return {
+    user_id: user._id,
+    student_id: user.student_id,
+    session_id: user.session_id,
+    activity_type: 'question',
+    question: {
+      id: selected.question._id,
+      question_text: selected.question.question_text,
+      options: selected.question.options,
+      concept: selected.question.concept,
+      level: selected.question.level,
+      difficulty: selected.question.difficulty,
+      question_type: selected.question.question_type,
+      skills: selected.question.skills,
+      misconception_target: selected.question.misconception_target,
+      cognitive_level: selected.question.cognitive_level,
+      story_based: selected.question.story_based,
+      time_expected: selected.question.time_expected,
+      hints: selected.question.hints,
+      explanation_depth: selected.question.explanation_depth,
+    },
+    adaptive_context: {
+      weakest_concept: selected.target.concept,
+      weakest_skill: selected.target.weakest_skill,
+      weakest_skill_mastery: Number(selected.target.weakest_skill_mastery.toFixed(2)),
+      subtopic: CONCEPT_TO_SUBTOPIC[selected.target.concept] || 'algebraic_expressions',
+      target_difficulty: engine.action.difficulty,
+      selected_action: engine.action,
+      rl_state: engine.state,
+      remedial,
+      guidance,
+    },
+    force_unattempted_mode: Boolean(forceUnattemptedMode),
+    pending_unattempted_questions: Math.max(0, toNonNegativeInteger(pendingUnattemptedCount, 0)),
+  };
+}
+
+async function selectForcedUnattemptedQuestion(user, requestedConcept) {
+  const pendingAttempts = await resolvePendingUnattemptedAttempts(user._id);
+  const pendingIds = pendingAttempts.map((row) => row.question_id);
+
+  if (!pendingIds.length) {
+    return {
+      pendingCount: 0,
+      selected: null,
+    };
+  }
+
+  const allowedTypes = ALLOWED_QUESTION_TYPES;
+  const completed = new Set(user.progress.completed_concepts || []);
+  const skillMap = Object.fromEntries(user.learner_model.skill_mastery || []);
+
+  let forcedQuestion = null;
+  if (requestedConcept) {
+    forcedQuestion = await Question.findOne({
+      _id: { $in: pendingIds },
+      concept: requestedConcept,
+      question_type: { $in: allowedTypes },
+    }).sort({ createdAt: 1 }).exec();
+  }
+
+  if (!forcedQuestion) {
+    forcedQuestion = await Question.findOne({
+      _id: { $in: pendingIds },
+      question_type: { $in: allowedTypes },
+    }).sort({ createdAt: 1 }).exec();
+  }
+
+  if (!forcedQuestion) {
+    return {
+      pendingCount: pendingIds.length,
+      selected: null,
+    };
+  }
+
+  const conceptNode = CONCEPT_GRAPH.find((node) => node.id === forcedQuestion.concept) || CONCEPT_GRAPH[0];
+  const fallbackSkill = (conceptNode.skills && conceptNode.skills[0]) || null;
+  const weakestSkill = (Array.isArray(forcedQuestion.skills) && forcedQuestion.skills.length > 0)
+    ? forcedQuestion.skills[0]
+    : fallbackSkill;
+
+  return {
+    pendingCount: pendingIds.length,
+    selected: {
+      question: forcedQuestion,
+      target: {
+        concept: forcedQuestion.concept,
+        concept_label: conceptNode.label,
+        weakest_skill: weakestSkill,
+        weakest_skill_mastery: weakestSkill
+          ? toSafeNumber(skillMap[weakestSkill], 0.2)
+          : 0.2,
+        concept_status: completed.has(forcedQuestion.concept) ? 'completed' : 'in_progress',
+      },
+    },
+  };
 }
 
 async function resolveChapterMetricTotals(questionFallback = 10, hintsFallback = 0) {
@@ -313,9 +463,36 @@ async function nextQuestion(req, res) {
 
     const engine = chooseAdaptiveAction(user.learner_model);
     const requestedConcept = typeof req.query.concept === 'string' ? req.query.concept : '';
+    const forceUnattempted = isTruthyFlag(req.query.force_unattempted);
+    let pendingUnattemptedCount = 0;
     const missionConcept = resolveMissionConceptForRequest(user, requestedConcept);
     let selected = null;
-    if (missionConcept) {
+
+    if (forceUnattempted) {
+      const forcedSelection = await selectForcedUnattemptedQuestion(user, missionConcept || requestedConcept);
+      pendingUnattemptedCount = forcedSelection.pendingCount;
+
+      if (forcedSelection.selected) {
+        selected = forcedSelection.selected;
+      } else if (pendingUnattemptedCount === 0) {
+        return res.json({
+          user_id: user._id,
+          student_id: user.student_id,
+          session_id: user.session_id,
+          activity_type: 'review_complete',
+          force_unattempted_mode: false,
+          pending_unattempted_questions: 0,
+          message: 'No pending unattempted questions remaining.',
+        });
+      } else {
+        return res.status(404).json({
+          message: 'Pending unattempted questions found, but no supported question type is available',
+          pending_unattempted_questions: pendingUnattemptedCount,
+        });
+      }
+    }
+
+    if (!selected && missionConcept) {
       selected = await selectQuestionForConcept(user, engine.action, missionConcept);
     }
     if (!selected) {
@@ -404,42 +581,32 @@ async function nextQuestion(req, res) {
           remedial,
           guidance: 'Teach mode active: complete this mini-lesson before challenge mode.',
         },
+        force_unattempted_mode: false,
+        pending_unattempted_questions: Math.max(
+          0,
+          toNonNegativeInteger(
+            pendingUnattemptedCount || await resolvePendingUnattemptedCount(user._id),
+            0
+          )
+        ),
       });
     }
 
-    return res.json({
-      user_id: user._id,
-      student_id: user.student_id,
-      session_id: user.session_id,
-      activity_type: 'question',
-      question: {
-        id: selected.question._id,
-        question_text: selected.question.question_text,
-        options: selected.question.options,
-        concept: selected.question.concept,
-        level: selected.question.level,
-        difficulty: selected.question.difficulty,
-        question_type: selected.question.question_type,
-        skills: selected.question.skills,
-        misconception_target: selected.question.misconception_target,
-        cognitive_level: selected.question.cognitive_level,
-        story_based: selected.question.story_based,
-        time_expected: selected.question.time_expected,
-        hints: selected.question.hints,
-        explanation_depth: selected.question.explanation_depth,
-      },
-      adaptive_context: {
-        weakest_concept: selected.target.concept,
-        weakest_skill: selected.target.weakest_skill,
-        weakest_skill_mastery: Number(selected.target.weakest_skill_mastery.toFixed(2)),
-        subtopic: CONCEPT_TO_SUBTOPIC[selected.target.concept] || 'algebraic_expressions',
-        target_difficulty: engine.action.difficulty,
-        selected_action: engine.action,
-        rl_state: engine.state,
-        remedial,
+    if (!forceUnattempted && pendingUnattemptedCount === 0) {
+      pendingUnattemptedCount = await resolvePendingUnattemptedCount(user._id);
+    }
+
+    return res.json(
+      buildQuestionResponse({
+        user,
+        selected,
+        engine,
         guidance,
-      },
-    });
+        remedial,
+        forceUnattemptedMode: forceUnattempted,
+        pendingUnattemptedCount,
+      })
+    );
   } catch (error) {
     return res.status(500).json({ message: error.message });
   }
@@ -472,6 +639,7 @@ async function completeLesson(req, res) {
 async function getProgress(req, res) {
   try {
     const user = await getOrCreateSession(req, req.query?.user_name || 'Learner');
+    const pendingUnattemptedQuestions = await resolvePendingUnattemptedCount(user._id);
 
     return res.json({
       user_id: user._id,
@@ -489,6 +657,7 @@ async function getProgress(req, res) {
         total_hints_embedded: user.total_hints_embedded,
         time_spent_seconds: user.time_spent_seconds,
         topic_completion_ratio: user.topic_completion_ratio,
+        pending_unattempted_questions: pendingUnattemptedQuestions,
         status: user.status,
       },
       progress: user.progress,

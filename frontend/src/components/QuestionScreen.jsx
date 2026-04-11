@@ -114,6 +114,7 @@ export default function QuestionScreen({
   loading,
   initialAttempts,
   feedback,
+  allowSkip = true,
 }) {
   const [selectedAnswer, setSelectedAnswer] = useState('');
   const [confidence, setConfidence] = useState('');
@@ -437,14 +438,25 @@ export default function QuestionScreen({
           {loading ? 'Checking...' : 'Submit Answer'}
         </button>
 
-        <button
-          type="button"
-          className="btn-ghost"
-          disabled={loading || submitted}
-          onClick={handleSkip}
-        >
-          Skip Question
-        </button>
+        {allowSkip ? (
+          <button
+            type="button"
+            className="btn-ghost"
+            disabled={loading || submitted}
+            onClick={handleSkip}
+          >
+            Skip Question
+          </button>
+        ) : (
+          <button
+            type="button"
+            className="btn-ghost"
+            disabled
+            title="Skip is disabled until all pending questions are answered"
+          >
+            Skip Disabled
+          </button>
+        )}
       </div>
     </div>
   );

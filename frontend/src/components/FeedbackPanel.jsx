@@ -10,6 +10,7 @@ export default function FeedbackPanel({
   onSkip,
   loading,
   showStats,
+  allowSkip = true,
 }) {
   if (!feedback) return null;
   const [localShowStats, setLocalShowStats] = useState(false);
@@ -173,9 +174,13 @@ export default function FeedbackPanel({
             <button type="button" className="btn-primary" onClick={onRetry} disabled={loading}>
               Retry Question
             </button>
-            <button type="button" className="btn-ghost" onClick={onSkip} disabled={loading}>
-              Skip & Move On
-            </button>
+            {allowSkip ? (
+              <button type="button" className="btn-ghost" onClick={onSkip} disabled={loading}>
+                Skip & Move On
+              </button>
+            ) : (
+              <p className="feedback-screen__progress-note">Skip is disabled until pending questions are answered.</p>
+            )}
           </>
         ) : (
           <>
