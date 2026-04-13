@@ -217,6 +217,7 @@ function App() {
   const [pendingUnattemptedCount, setPendingUnattemptedCount] = useState(0);
   const [submittingSession, setSubmittingSession] = useState(false);
   const [savingCheckpoint, setSavingCheckpoint] = useState(false);
+  const [loggingOut, setLoggingOut] = useState(false);
   const [checkpointNotice, setCheckpointNotice] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
@@ -252,6 +253,7 @@ function App() {
     setForceUnattemptedMode(false);
     setPendingUnattemptedCount(0);
     setSavingCheckpoint(false);
+    setLoggingOut(false);
     setCheckpointNotice('');
     exitSubmissionSentRef.current = false;
     autoCompletedSubmitAttemptedRef.current = false;
@@ -457,6 +459,15 @@ function App() {
   useEffect(() => {
     if (!sessionContext) return undefined;
 
+    function buildCheckpointPayload() {
+      return {
+        student_id: sessionContext.student_id,
+        session_id: sessionContext.session_id,
+        chapter_id: sessionContext.chapter_id || CHAPTER_ID,
+        token: sessionContext.token,
+      };
+    }
+
     function buildExitPayload() {
       const resolvedStatus = chapterCompleted ? 'completed' : 'exited_midway';
       return {
@@ -468,10 +479,42 @@ function App() {
       };
     }
 
+    function saveCheckpointOnExit() {
+      const checkpointPayload = buildCheckpointPayload();
+
+      let saved = false;
+      try {
+        if (navigator.sendBeacon) {
+          const blob = new Blob([JSON.stringify(checkpointPayload)], { type: 'application/json' });
+          saved = navigator.sendBeacon('/api/save-checkpoint', blob);
+        }
+      } catch (_error) {
+        saved = false;
+      }
+
+      if (!saved) {
+        fetch('/api/save-checkpoint', {
+          method: 'POST',
+          headers: {
+            Authorization: `Bearer ${sessionContext.token}`,
+            'Content-Type': 'application/json',
+            'x-student-id': sessionContext.student_id,
+            'x-session-id': sessionContext.session_id,
+          },
+          body: JSON.stringify(checkpointPayload),
+          keepalive: true,
+        }).catch(() => {
+          // intentionally ignored; this is best-effort checkpoint persistence on exit.
+        });
+      }
+    }
+
     function submitOnExit() {
-      if (exitSubmissionSentRef.current || sessionSubmission?.submitted || submittingSession) {
+      if (loggingOut || exitSubmissionSentRef.current || sessionSubmission?.submitted || submittingSession) {
         return;
       }
+
+      saveCheckpointOnExit();
 
       const payload = buildExitPayload();
       persistFailedSubmission(sessionContext.session_id, payload);
@@ -506,7 +549,7 @@ function App() {
     }
 
     function handleBeforeUnload(event) {
-      if (sessionSubmission?.submitted || submittingSession) {
+      if (loggingOut || sessionSubmission?.submitted || submittingSession) {
         return;
       }
 
@@ -518,7 +561,7 @@ function App() {
     }
 
     function handlePageHide() {
-      if (sessionSubmission?.submitted || submittingSession) {
+      if (loggingOut || sessionSubmission?.submitted || submittingSession) {
         return;
       }
 
@@ -532,7 +575,14 @@ function App() {
       window.removeEventListener('beforeunload', handleBeforeUnload);
       window.removeEventListener('pagehide', handlePageHide);
     };
-  }, [chapterCompleted, screen, sessionContext, sessionSubmission?.submitted, submittingSession]);
+  }, [
+    chapterCompleted,
+    loggingOut,
+    screen,
+    sessionContext,
+    sessionSubmission?.submitted,
+    submittingSession,
+  ]);
 
   useEffect(() => {
     if (screen !== 'end') {
@@ -591,6 +641,46 @@ function App() {
       setError(err.message);
     } finally {
       setSavingCheckpoint(false);
+    }
+  }
+
+  async function handleLogout() {
+    if (loggingOut) return;
+
+    setLoggingOut(true);
+    setError('');
+
+    try {
+      const shouldSaveProgress = Boolean(
+        sessionContext && !sessionSubmission?.submitted && !submittingSession
+      );
+
+      if (shouldSaveProgress) {
+        await saveCheckpoint({
+          student_id: sessionContext.student_id,
+          session_id: sessionContext.session_id,
+          chapter_id: sessionContext.chapter_id || CHAPTER_ID,
+        });
+      }
+    } catch (_error) {
+      // Best-effort checkpoint save before redirecting to dashboard.
+    } finally {
+      exitSubmissionSentRef.current = true;
+
+      if (sessionContext?.session_id) {
+        clearFailedSubmission(sessionContext.session_id);
+      }
+
+      clearStoredSessionContext();
+      setApiSessionContext({ token: '', student_id: '', session_id: '', chapter_id: '' });
+
+      if (typeof window !== 'undefined') {
+        window.location.assign(PORTAL_DASHBOARD_URL);
+        return;
+      }
+
+      setLoggingOut(false);
+      resetSessionContext('Session cleared. Open the chapter from the portal to start a new session.');
     }
   }
 
@@ -1072,8 +1162,9 @@ function App() {
         currentScreen={screen}
         onNavigateMap={() => setScreen('map')}
         onSaveProgress={sessionSubmission?.submitted ? undefined : handleSaveProgress}
-        savingProgress={savingCheckpoint || loading || submittingSession}
-        onLogout={resetSessionContext}
+        savingProgress={savingCheckpoint || loading || submittingSession || loggingOut}
+        loggingOut={loggingOut}
+        onLogout={handleLogout}
       />
 
       <div className="main-area">
